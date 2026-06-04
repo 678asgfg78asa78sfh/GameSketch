@@ -1,0 +1,12 @@
+# Laufzeitdaten (eigene Git-Repos pro Projekt) — nicht im App-Repo
+/data/
+
+# Node / Build
+node_modules/
+dist/
+.vite/
+
+# OS / Editor
+Thumbs.db
+.DS_Store
+*.log
