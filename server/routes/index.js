@@ -1,4 +1,15 @@
-// Route modules are registered here as they are implemented (Phases 2-4).
+import authRoutes from "./auth.routes.js";
+import projectRoutes from "./projects.routes.js";
+import nodeRoutes from "./nodes.routes.js";
+import assetRoutes from "./assets.routes.js";
+import canvasRoutes from "./canvas.routes.js";
+import aiRoutes from "./ai.routes.js";
+
 export async function registerRoutes(app) {
-  // intentionally empty until auth/projects/nodes/assets/canvas/ai routes land
+  await app.register(authRoutes);
+  await app.register(projectRoutes);
+  await app.register(nodeRoutes);
+  await app.register(assetRoutes);
+  await app.register(canvasRoutes);
+  await app.register(aiRoutes);
 }
