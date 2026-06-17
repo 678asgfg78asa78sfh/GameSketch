@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import { api } from "../api.js";
+import { useT } from "../i18n/index.jsx";
 
 export default function CanvasPane({ slug, node }) {
+  const { t } = useT();
   const [initial, setInitial] = useState(null);
   const saveTimer = useRef(null);
 
@@ -15,7 +17,7 @@ export default function CanvasPane({ slug, node }) {
     return () => { ok = false; };
   }, [node.id]);
 
-  if (!initial) return <div className="mono">Canvas lädt…</div>;
+  if (!initial) return <div className="mono">{t("editor.canvasLoading")}</div>;
 
   return (
     <div style={{ height: "68vh", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border)" }}>

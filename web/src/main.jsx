@@ -6,5 +6,13 @@ import "@fontsource-variable/jetbrains-mono";
 import "./styles/tokens.css";
 import "./styles/global.css";
 import App from "./App.jsx";
+import { I18nProvider } from "./i18n/index.jsx";
+import { WorkProvider } from "./workContext.jsx";
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  <I18nProvider>
+    <WorkProvider>
+      <App />
+    </WorkProvider>
+  </I18nProvider>
+);

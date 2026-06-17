@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { api } from "../api.js";
+import { useT } from "../i18n/index.jsx";
 
 export default function Attachments({ slug, node, onChanged }) {
+  const { t } = useT();
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -21,7 +23,7 @@ export default function Attachments({ slug, node, onChanged }) {
         background: over ? "rgba(124,140,255,0.07)" : "transparent",
       }}>
       <div style={{ color: "var(--text-dim)", fontSize: 12.5, marginBottom: has ? 12 : 0 }}>
-        {busy ? "lädt hoch…" : "📎 Dateien hierher ziehen — Skizzen, Refs, was auch immer"}
+        {busy ? t("attachments.uploading") : t("attachments.dropHint")}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
         {(node.attachments || []).map((a) => (
