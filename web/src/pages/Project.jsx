@@ -57,17 +57,13 @@ export default function Project({ slug, me, onBack }) {
         </div>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: maximized ? "1fr" : `${sideW}px 8px 1fr`, gap: 8, minHeight: 0 }}>
-        {!maximized && (
-          <>
-            <aside className="glass" style={{ overflow: "auto", padding: 16 }}>
-              <Tree project={project} selectedId={selectedId} onSelect={setSelectedId} onChanged={reload} />
-            </aside>
-            <div onPointerDown={startSplit} title="⇔" style={{ cursor: "col-resize", display: "grid", placeItems: "center", touchAction: "none" }}>
-              <div style={{ width: 3, height: 44, borderRadius: 3, background: "var(--border-strong)" }} />
-            </div>
-          </>
-        )}
+      <div style={{ display: "grid", gridTemplateColumns: `${sideW}px 8px 1fr`, gap: 8, minHeight: 0 }}>
+        <aside className="glass" style={{ overflow: "auto", padding: 16 }}>
+          <Tree project={project} selectedId={selectedId} onSelect={setSelectedId} onChanged={reload} />
+        </aside>
+        <div onPointerDown={startSplit} title="⇔" style={{ cursor: "col-resize", display: "grid", placeItems: "center", touchAction: "none" }}>
+          <div style={{ width: 3, height: 44, borderRadius: 3, background: "var(--border-strong)" }} />
+        </div>
         <main className="glass" style={{ overflow: "auto" }}>
           {selected ? (
             <NodeEditor key={selected.id} slug={slug} node={selected} onChanged={reload}
