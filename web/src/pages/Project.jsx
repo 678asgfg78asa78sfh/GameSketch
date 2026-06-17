@@ -18,8 +18,11 @@ export default function Project({ slug, me, onBack }) {
   const reload = useCallback(async () => setProject(await api.project(slug)), [slug]);
   // reload on mount and whenever the copilot reports it changed the design (reloadKey)
   useEffect(() => { reload(); }, [reload, reloadKey]);
-  // let the copilot see which node is open
-  useEffect(() => { setWork({ slug, nodeId: selectedId }); }, [slug, selectedId, setWork]);
+  // let the copilot see which node is open (slug + node id + title)
+  useEffect(() => {
+    const sel = project?.nodes.find((n) => n.id === selectedId);
+    setWork({ slug, nodeId: selectedId, nodeTitle: sel?.title || null });
+  }, [slug, selectedId, project, setWork]);
   useEffect(() => { try { localStorage.setItem("gs_sidebar_w", String(sideW)); } catch { /* ignore */ } }, [sideW]);
   // re-read sidebar width when a saved layout is applied or reset
   useEffect(() => { try { setSideW(Number(localStorage.getItem("gs_sidebar_w")) || 340); } catch { /* ignore */ } }, [layoutTick]);

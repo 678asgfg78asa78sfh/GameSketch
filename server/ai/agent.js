@@ -13,7 +13,25 @@ export function buildContext(project, nodeId) {
   const cats = project.categories?.length ? project.categories : DEFAULT_CATEGORIES;
   const byPillar = {};
   for (const n of project.nodes) (byPillar[n.pillar] ||= []).push(n);
+  const current = nodeId ? project.nodes.find((n) => n.id === nodeId) : null;
   const lines = [`Project: "${project.title}" (slug: ${project.slug})`, ""];
+
+  // Put the node the user currently has OPEN front-and-centre, with its FULL body — this is the
+  // "canvas" they're working on right now. Everything else is background context.
+  if (current) {
+    const catLabel = cats.find((c) => c.slug === current.pillar)?.label || current.pillar;
+    lines.push(
+      "### CURRENTLY OPEN NODE (the user is editing this right now — focus here unless told otherwise):",
+      `id=${current.id} · category=${current.pillar} (${catLabel}) · status=${current.status} · kind=${current.kind}`,
+      `Title: ${current.title}`,
+      "Body:",
+      current.body && current.body.trim() ? current.body.trim() : "(empty)",
+      "",
+      "### Rest of the project (for context):",
+      ""
+    );
+  }
+
   for (const c of cats) {
     const ns = (byPillar[c.slug] || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     lines.push(`## ${c.slug} — ${c.label} (${ns.length})`);
@@ -25,7 +43,7 @@ export function buildContext(project, nodeId) {
     lines.push("");
   }
   let ctx = lines.join("\n");
-  if (ctx.length > 8000) ctx = ctx.slice(0, 8000) + "\n…(truncated)";
+  if (ctx.length > 12000) ctx = ctx.slice(0, 12000) + "\n…(truncated)";
   return ctx;
 }
 

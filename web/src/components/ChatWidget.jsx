@@ -76,7 +76,9 @@ export default function ChatWidget() {
     );
   }
 
-  const ctxLabel = work.slug ? t("chat.sees", { what: work.slug + (work.nodeId ? " · ✎" : "") }) : t("chat.noProject");
+  const ctxLabel = work.slug
+    ? t("chat.sees", { what: work.nodeTitle ? `${work.slug} › ✎ ${work.nodeTitle}` : work.slug })
+    : t("chat.noProject");
 
   return (
     <div className="glass" style={{ position: "fixed", left: ui.x, top: ui.y, width: ui.w, height: ui.h, zIndex: 45, display: "flex", flexDirection: "column", overflow: "hidden" }}>
