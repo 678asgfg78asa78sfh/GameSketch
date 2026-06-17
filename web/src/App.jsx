@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "./api.js";
 import { useT } from "./i18n/index.jsx";
 import { useWork } from "./workContext.jsx";
@@ -14,11 +14,23 @@ export default function App() {
   const { setWork } = useWork();
   const [me, setMe] = useState(null);
   const [ready, setReady] = useState(false);
-  const [route, setRoute] = useState({ name: "projects" });
+  // remember where you were so a browser refresh doesn't kick you back to the projects list
+  const [route, setRoute] = useState(() => {
+    try {
+      const r = JSON.parse(localStorage.getItem("gs_route") || "null");
+      if (r && (r.name === "projects" || (r.name === "project" && r.slug))) return r;
+    } catch { /* ignore */ }
+    return { name: "projects" };
+  });
 
   useEffect(() => {
     api.me().then(setMe).catch(() => setMe(null)).finally(() => setReady(true));
   }, []);
+  useEffect(() => { try { localStorage.setItem("gs_route", JSON.stringify(route)); } catch { /* ignore */ } }, [route]);
+
+  // stable so child effects (Project.reload) don't churn
+  const openProject = useCallback((slug) => setRoute({ name: "project", slug }), []);
+  const goProjects = useCallback(() => setRoute({ name: "projects" }), []);
 
   // keep the copilot's "what's open" in sync with the route (node is set by Project)
   useEffect(() => {
@@ -34,11 +46,11 @@ export default function App() {
   return (
     <>
       {route.name === "project" ? (
-        <Project slug={route.slug} me={me} onBack={() => setRoute({ name: "projects" })} />
+        <Project slug={route.slug} me={me} onBack={goProjects} />
       ) : (
         <Projects
           me={me}
-          onOpen={(slug) => setRoute({ name: "project", slug })}
+          onOpen={openProject}
           onLogout={async () => { await api.logout(); setMe(null); }}
         />
       )}

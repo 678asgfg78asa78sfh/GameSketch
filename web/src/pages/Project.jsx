@@ -10,14 +10,24 @@ export default function Project({ slug, me, onBack }) {
   const { t } = useT();
   const { setWork, reloadKey, layoutTick } = useWork();
   const [project, setProject] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  // restore the previously open node so a refresh reopens it
+  const [selectedId, setSelectedId] = useState(() => {
+    try { return localStorage.getItem(`gs_sel_${slug}`) || null; } catch { return null; }
+  });
   const [sideW, setSideW] = useState(() => { try { return Number(localStorage.getItem("gs_sidebar_w")) || 340; } catch { return 340; } });
   const [maximized, setMaximized] = useState(false);
   const splitter = useRef(null);
 
-  const reload = useCallback(async () => setProject(await api.project(slug)), [slug]);
+  const reload = useCallback(async () => {
+    try { setProject(await api.project(slug)); }
+    catch { onBack(); } // project gone (e.g. stale restored route) -> back to the list
+  }, [slug, onBack]);
   // reload on mount and whenever the copilot reports it changed the design (reloadKey)
   useEffect(() => { reload(); }, [reload, reloadKey]);
+  // remember which node is open per project
+  useEffect(() => {
+    try { selectedId ? localStorage.setItem(`gs_sel_${slug}`, selectedId) : localStorage.removeItem(`gs_sel_${slug}`); } catch { /* ignore */ }
+  }, [slug, selectedId]);
   // let the copilot see which node is open (slug + node id + title)
   useEffect(() => {
     const sel = project?.nodes.find((n) => n.id === selectedId);
