@@ -13,3 +13,7 @@ Thumbs.db
 
 # Test scratch output
 test-out.txt
+_*.mjs
+
+# Shareable build artifact (regenerate with build-share-zip.bat)
+/GameSketch-install.zip

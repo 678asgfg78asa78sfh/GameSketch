@@ -39,7 +39,9 @@ npm run dev:web      # Vite UI auf :5173 (proxyt /api -> :4321)
 ```
 
 Beim ersten Aufruf legst du im Browser deinen Account an (user:password — keine Rollen,
-nur damit jede Änderung einen Autor hat → team-tauglich).
+nur damit jede Änderung einen Autor hat → team-tauglich). Im Setup wählst du die
+**Sprache** (Englisch / Deutsch / Russisch); später jederzeit umstellbar über das
+**Zahnrad unten links** (dort auch: Passwort ändern, KI-Provider, How-To).
 
 ## Wo liegen meine Daten?
 
@@ -57,16 +59,20 @@ data/
 
 **Backup = `data/` kopieren.** Wiederherstellung eines Knoten-Stands geht im UI (Tab „history" → Restore).
 
-## KI-Anbindung (lokal)
+## KI-Anbindung
 
-In **`data/config.json`** den Block `ai` auf deinen lokalen, OpenAI-kompatiblen Endpunkt setzen:
+Im **Zahnrad unten links → KI** wählst du einen Provider (kein `config.json`-Gefummel nötig):
 
-```json
-"ai": { "baseUrl": "http://127.0.0.1:1234/v1", "model": "dein-modell", "apiKey": "" }
-```
+- **Claude CLI** (`claude -p`) — ruft das lokale `claude`-Binary auf, kein API-Key.
+- **API-Key (OpenRouter & OpenAI-kompatibel)** — `baseUrl` + `apiKey` + `model`,
+  Button **„Modelle laden"** zieht die Modellliste vom Provider.
 
 Dann erscheinen im Knoten-Tab **„assist"** die Buttons *Lücken finden*, *Zusammenfassen*,
-*Alternative*. Die schicken den jeweiligen Teilbaum an **deinen** Endpunkt — nie in die Cloud.
+*Alternative*. Die schicken den jeweiligen Teilbaum an den von **dir** gewählten Provider —
+die Antwort kommt in deiner UI-Sprache zurück.
+
+> Die Einstellungen landen weiterhin in `data/config.json` (Block `ai`); der API-Key wird
+> der UI nie zurückgegeben. Alte `{ baseUrl, model, apiKey }`-Configs werden automatisch migriert.
 
 ## KI-Lese-API (für externe Agents)
 
@@ -80,11 +86,18 @@ GET /api/projects/:slug/nodes/:id/subtree.json # beliebiger Teilbaum
 GET /api/projects/:slug/nodes/:id/subtree.md
 ```
 
+Vollständige Anleitung inkl. Cookie-Handling und einem `claude`-Beispiel: **[HOWTO.md](HOWTO.md)**
+(im Zahnrad → How-To sind die URLs mit deinem Projekt-Slug vorausgefüllt, mit Kopier-Button).
+
 ## „Funkt nirgendwohin"-Garantie
 
 Keine CDNs, keine Google Fonts (Fonts lokal gebündelt via fontsource), keine Telemetrie,
-keine Auto-Update-Pings. KI-Aufrufe gehen ausschließlich an den Endpunkt, den **du** in
-`config.json` einträgst. Excalidraw läuft vollständig offline.
+keine Auto-Update-Pings. Excalidraw läuft vollständig offline. Die App selbst funkt nirgendwohin.
+
+**Ausnahme = KI:** Die *assist*-Funktion geht an den Provider, den **du** im Zahnrad wählst.
+Wählst du einen Cloud-Provider (OpenRouter) oder `claude -p`, verlässt der jeweilige
+Design-Ausschnitt deinen Rechner Richtung dieses Anbieters. Ein rein lokaler OpenAI-kompatibler
+Endpunkt (z. B. LM Studio / Ollama) bleibt vollständig offline. Du entscheidest pro Provider.
 
 ## Tests
 

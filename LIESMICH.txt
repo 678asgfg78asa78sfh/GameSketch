@@ -1,0 +1,53 @@
+GameSketch — lokales Tool für Spiel-Design als lebenden Baum
+=============================================================
+
+So startest du es (Windows):
+
+  1. Diesen Ordner irgendwohin entpacken (z. B. nach C:\GameSketch).
+  2. Doppelklick auf  START.bat
+
+Beim allerersten Start installiert sich GameSketch selbst (einmalig, dafür
+brauchst du kurz Internet). Danach öffnet sich der Browser automatisch auf
+http://127.0.0.1:4321 — falls die Seite leer ist, einfach neu laden (F5),
+der Server braucht 1–2 Sekunden zum Hochfahren.
+
+Das schwarze "GameSketch Server"-Fenster bleibt offen, solange das Tool läuft.
+Zum Beenden: dieses Fenster einfach schließen.
+
+
+Voraussetzungen
+---------------
+  - Node.js 20 oder neuer  ->  https://nodejs.org   (falls nicht da, sagt START.bat Bescheid)
+  - git (für die Versionierung jedes Projekts)       ->  https://git-scm.com
+
+
+Erster Start in der App
+-----------------------
+  - Sprache wählen: Englisch / Deutsch / Russisch (jederzeit änderbar)
+  - Account anlegen (Name + Passwort) — nur damit jede Änderung einen Autor hat
+  - Unten links das Zahnrad (⚙): Sprache, Passwort ändern, KI-Anbindung, How-To
+
+
+Deine Daten
+-----------
+Alles liegt im Unterordner  data\  (wird beim ersten Start erzeugt).
+Backup = einfach den  data\  Ordner kopieren.
+
+
+KI-Funktion (optional)
+----------------------
+Im Zahnrad → KI wählst du einen Anbieter:
+  - Claude CLI (claude -p), lokal installiert, kein API-Key, ODER
+  - API-Key (OpenRouter & OpenAI-kompatibel) mit "Modelle laden".
+Ohne KI funktioniert alles andere ganz normal.
+
+
+Falls START.bat mal nicht will (manuell)
+----------------------------------------
+Eine Eingabeaufforderung in diesem Ordner öffnen und:
+
+  npm install
+  npm run build
+  npm start
+
+Dann im Browser http://127.0.0.1:4321 öffnen.
