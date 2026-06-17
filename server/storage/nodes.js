@@ -1,11 +1,10 @@
 import matter from "gray-matter";
-import { readFileSync, writeFileSync, existsSync, rmSync, mkdirSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, rmSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { ulid } from "../util/ids.js";
 import { nodesDir, nodePath, projectDir } from "./paths.js";
 import { commitAll, fileHistory, fileAtCommit } from "./git.js";
-
-const PILLARS = ["gameloop", "artstyle", "content", "threads", "scope"];
+import { isCategorySlug } from "./categories.js";
 
 function nowIso() { return new Date().toISOString(); }
 
@@ -25,9 +24,10 @@ export async function listNodes(slug) {
   const base = nodesDir(slug);
   if (!existsSync(base)) return [];
   const out = [];
-  for (const pillar of PILLARS) {
+  // Iterate every category folder that exists — categories are per-project, not a fixed list.
+  for (const pillar of readdirSync(base)) {
     const dir = join(base, pillar);
-    if (!existsSync(dir)) continue;
+    if (!statSync(dir).isDirectory()) continue;
     for (const f of readdirSync(dir)) {
       if (!f.endsWith(".md")) continue;
       out.push(fileToNode(readFileSync(join(dir, f), "utf8")));
@@ -53,7 +53,7 @@ export async function createNode(slug, input, author) {
     created_by: author.name, created_at: ts, updated_by: author.name, updated_at: ts,
     body: input.body || "",
   };
-  if (!PILLARS.includes(n.pillar)) throw new Error(`bad pillar: ${n.pillar}`);
+  if (!isCategorySlug(n.pillar)) throw new Error(`bad category: ${n.pillar}`);
   mkdirSync(nodesDir(slug, n.pillar), { recursive: true });
   writeFileSync(nodePath(slug, n.pillar, id), nodeToFile(n));
   await commitAll(projectDir(slug), { ...author, message: `node: create "${n.title}"` });
@@ -72,8 +72,57 @@ export async function updateNode(slug, id, patch, author) {
   return next;
 }
 
-export async function moveNode(slug, id, { parent, order }, author) {
-  return updateNode(slug, id, { parent: parent ?? null, order: order ?? 0 }, author);
+// Collect the ids of every descendant of `id` from a flat node list.
+function descendantsOf(all, id) {
+  const out = new Set();
+  const walk = (pid) => {
+    for (const c of all) if (c.parent === pid && !out.has(c.id)) { out.add(c.id); walk(c.id); }
+  };
+  walk(id);
+  return out;
+}
+
+// Re-parent a node. Drop onto another node => becomes its child and adopts its pillar
+// (the whole subtree follows into the new pillar). Guards against cycles so a node can
+// never be moved into itself or one of its own descendants (which made it vanish before).
+export async function moveNode(slug, id, { parent, order, pillar }, author) {
+  const all = await listNodes(slug);
+  const n = all.find((x) => x.id === id);
+  if (!n) throw new Error("node not found");
+
+  const newParent = parent ?? null;
+  if (newParent === id) throw new Error("cannot move a node into itself");
+  const descendants = descendantsOf(all, id);
+  if (newParent && descendants.has(newParent))
+    throw new Error("cannot move a node into its own descendant");
+
+  const parentNode = newParent ? all.find((x) => x.id === newParent) : null;
+  if (newParent && !parentNode) throw new Error("parent not found");
+  // child: inherit parent's category. root: use the explicit target category, else keep current.
+  const newPillar = parentNode ? parentNode.pillar : (isCategorySlug(pillar) ? pillar : n.pillar);
+  const ts = nowIso();
+
+  // Write `node` into `newPillar`, removing its old file if the pillar actually changed.
+  const writeAt = (node, oldPillar) => {
+    if (newPillar !== oldPillar) rmSync(nodePath(slug, oldPillar, node.id));
+    mkdirSync(nodesDir(slug, newPillar), { recursive: true });
+    writeFileSync(nodePath(slug, newPillar, node.id), nodeToFile({ ...node, pillar: newPillar }));
+  };
+
+  const moved = { ...n, parent: newParent, order: order ?? n.order ?? 0,
+    updated_by: author.name, updated_at: ts };
+  writeAt(moved, n.pillar);
+
+  // Cascade the pillar change down the subtree so files live in the right folder.
+  if (newPillar !== n.pillar) {
+    for (const d of all) {
+      if (!descendants.has(d.id) || d.pillar === newPillar) continue;
+      writeAt({ ...d, updated_by: author.name, updated_at: ts }, d.pillar);
+    }
+  }
+
+  await commitAll(projectDir(slug), { ...author, message: `node: move "${n.title}"` });
+  return { ...moved, pillar: newPillar };
 }
 
 export async function deleteNode(slug, id, author) {

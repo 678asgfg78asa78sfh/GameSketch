@@ -5,8 +5,9 @@ import { slugify } from "../util/slug.js";
 import { projectsDir, projectDir, projectMeta, nodesDir } from "./paths.js";
 import { ensureRepo, commitAll } from "./git.js";
 import { listNodes } from "./nodes.js";
+import { DEFAULT_CATEGORIES, categoriesFromMeta } from "./categories.js";
 
-const PILLARS = ["gameloop", "artstyle", "content", "threads", "scope"];
+const PILLARS = DEFAULT_CATEGORIES.map((c) => c.slug);
 
 function uniqueSlug(base) {
   let slug = base, i = 2;
@@ -24,7 +25,7 @@ export async function createProject({ title }, author) {
   mkdirSync(join(dir, "canvases"), { recursive: true });
   const meta = matter.stringify("\n", {
     title, slug, created_by: author.name, created_at: new Date().toISOString(),
-    pillars: PILLARS,
+    categories: DEFAULT_CATEGORIES,
   });
   writeFileSync(projectMeta(slug), meta);
   for (const p of PILLARS) writeFileSync(join(nodesDir(slug, p), ".gitkeep"), "");
@@ -47,5 +48,5 @@ export async function listProjects() {
 export async function getProject(slug) {
   if (!existsSync(projectMeta(slug))) return null;
   const { data } = matter(readFileSync(projectMeta(slug), "utf8"));
-  return { ...data, slug, nodes: await listNodes(slug) };
+  return { ...data, slug, categories: categoriesFromMeta(data), nodes: await listNodes(slug) };
 }

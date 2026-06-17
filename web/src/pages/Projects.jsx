@@ -2,13 +2,11 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "../api.js";
 import { spring, fadeUp } from "../motion.js";
-
-const PILLARS = [
-  ["Gameloop", "--gameloop"], ["Grafik", "--artstyle"], ["Inhalt", "--content"],
-  ["Stränge", "--threads"], ["Scope", "--scope"],
-];
+import { useT } from "../i18n/index.jsx";
+import { DEFAULT_CATEGORIES } from "../pillars.js";
 
 export default function Projects({ me, onOpen, onLogout }) {
+  const { t } = useT();
   const [list, setList] = useState(null);
   const [title, setTitle] = useState("");
 
@@ -29,30 +27,30 @@ export default function Projects({ me, onOpen, onLogout }) {
           <div className="brand" style={{ fontSize: 30 }}>GameSketch</div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span className="mono">{me.name}</span>
-            <button className="btn btn-ghost" onClick={onLogout}>Logout</button>
+            <button className="btn btn-ghost" onClick={onLogout}>{t("common.logout")}</button>
           </div>
         </header>
 
         <div style={{ display: "flex", gap: 16, marginBottom: 38, color: "var(--text-faint)", fontSize: 12.5, flexWrap: "wrap" }}>
-          {PILLARS.map(([l, c]) => (
-            <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span className="dot" style={{ color: `var(${c})`, background: `var(${c})` }} />{l}
+          {DEFAULT_CATEGORIES.map((cat) => (
+            <span key={cat.slug} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span className="dot" style={{ color: cat.color, background: cat.color }} />{cat.label}
             </span>
           ))}
         </div>
 
         <motion.h1 variants={fadeUp} initial="initial" animate="animate" custom={0} style={{ fontSize: 42, marginBottom: 6 }}>
-          Deine Projekte
+          {t("projects.heading")}
         </motion.h1>
         <motion.p variants={fadeUp} initial="initial" animate="animate" custom={1}
           style={{ color: "var(--text-dim)", marginTop: 0, marginBottom: 24, fontSize: 16 }}>
-          Bring deine Spielideen als lebenden Baum aufs Papier.
+          {t("projects.subtitle")}
         </motion.p>
 
         <motion.form variants={fadeUp} initial="initial" animate="animate" custom={2} onSubmit={create}
           style={{ display: "flex", gap: 10, marginBottom: 32 }}>
-          <input className="field" placeholder="Neues Projekt benennen…" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <button className="btn btn-primary" style={{ whiteSpace: "nowrap" }}>＋ Neues Projekt</button>
+          <input className="field" placeholder={t("projects.newPlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} />
+          <button className="btn btn-primary" style={{ whiteSpace: "nowrap" }}>{t("projects.newButton")}</button>
         </motion.form>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(232px,1fr))", gap: 16 }}>
@@ -61,10 +59,10 @@ export default function Projects({ me, onOpen, onLogout }) {
               <motion.button key={p.slug} layout variants={fadeUp} initial="initial" animate="animate" exit={{ opacity: 0, scale: 0.96 }}
                 custom={3 + i} whileHover={{ y: -5, transition: spring }} whileTap={{ scale: 0.98 }}
                 onClick={() => onOpen(p.slug)} className="glass"
-                style={{ textAlign: "left", padding: 0, overflow: "hidden", cursor: "pointer" }}>
+                style={{ textAlign: "left", padding: 0, overflow: "hidden", cursor: "pointer", color: "var(--text)" }}>
                 <div style={{ height: 5, background: "linear-gradient(90deg, var(--gameloop), var(--artstyle), var(--content), var(--threads), var(--scope))" }} />
                 <div style={{ padding: 18 }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 19, fontWeight: 700 }}>{p.title}</div>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 19, fontWeight: 700, color: "var(--text)" }}>{p.title}</div>
                   <div className="mono" style={{ marginTop: 9 }}>{p.slug}</div>
                 </div>
               </motion.button>
@@ -72,7 +70,7 @@ export default function Projects({ me, onOpen, onLogout }) {
           </AnimatePresence>
         </div>
         {list && list.length === 0 && (
-          <div style={{ color: "var(--text-faint)", padding: "30px 4px" }}>Noch keine Projekte — leg oben dein erstes an. ✨</div>
+          <div style={{ color: "var(--text-faint)", padding: "30px 4px" }}>{t("projects.empty")}</div>
         )}
       </div>
     </div>

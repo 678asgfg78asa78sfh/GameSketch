@@ -40,3 +40,38 @@ test("move changes parent/order; delete removes file", async () => {
   await deleteNode(p.slug, b.id, author);
   assert.equal(await getNode(p.slug, b.id), null);
 });
+
+test("move across pillars adopts target pillar and cascades to descendants", async () => {
+  const p = await createProject({ title: "T4" }, author);
+  const target = await createNode(p.slug, { pillar: "scope", title: "Target" }, author);
+  const parent = await createNode(p.slug, { pillar: "gameloop", title: "Parent" }, author);
+  const child = await createNode(p.slug, { pillar: "gameloop", parent: parent.id, title: "Child" }, author);
+
+  await moveNode(p.slug, parent.id, { parent: target.id }, author);
+
+  assert.equal((await getNode(p.slug, parent.id)).parent, target.id);
+  assert.equal((await getNode(p.slug, parent.id)).pillar, "scope"); // adopts target pillar
+  assert.equal((await getNode(p.slug, child.id)).pillar, "scope");  // subtree cascades
+  // old file under gameloop is gone (listNodes wouldn't double-count, but verify by pillar)
+  const all = await listNodes(p.slug);
+  assert.equal(all.filter((n) => n.id === parent.id).length, 1);
+});
+
+test("un-nest: move a child to root of another category sets parent=null and the new pillar", async () => {
+  const p = await createProject({ title: "U" }, author);
+  const parent = await createNode(p.slug, { pillar: "gameloop", title: "P" }, author);
+  const child = await createNode(p.slug, { pillar: "gameloop", parent: parent.id, title: "C" }, author);
+  await moveNode(p.slug, child.id, { parent: null, pillar: "scope", order: 0 }, author);
+  const c = await getNode(p.slug, child.id);
+  assert.equal(c.parent, null);
+  assert.equal(c.pillar, "scope");
+});
+
+test("move into own descendant is rejected (no cycle, node stays)", async () => {
+  const p = await createProject({ title: "T5" }, author);
+  const a = await createNode(p.slug, { pillar: "content", title: "A" }, author);
+  const b = await createNode(p.slug, { pillar: "content", parent: a.id, title: "B" }, author);
+  await assert.rejects(() => moveNode(p.slug, a.id, { parent: b.id }, author), /descendant/);
+  // a is untouched and still reachable
+  assert.equal((await getNode(p.slug, a.id)).parent, null);
+});

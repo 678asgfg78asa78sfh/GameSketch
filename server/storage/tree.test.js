@@ -14,7 +14,8 @@ test("buildTree nests by parent within pillar, sorted by order", () => {
   assert.equal(t.gameloop.length, 1);
   assert.equal(t.gameloop[0].children.length, 2);
   assert.equal(t.gameloop[0].children[0].id, "b");
-  assert.deepEqual(Object.keys(t), ["gameloop", "artstyle", "content", "threads", "scope"]);
+  // categories are dynamic now: buildTree only keys the categories that actually have nodes
+  assert.deepEqual(Object.keys(t), ["gameloop"]);
 });
 
 test("flattenToMarkdown emits pillar headings and node bodies", () => {
