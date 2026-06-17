@@ -60,6 +60,8 @@ export default {
     kindNote: "Note",
     canvasEngineLoading: "Canvas engine loading…",
     canvasLoading: "Canvas loading…",
+    maximize: "Maximize (full width)",
+    restore: "Restore (Esc)",
     tabs: { edit: "edit", preview: "preview", canvas: "canvas", history: "history", assist: "assist" },
   },
   attachments: {
@@ -118,6 +120,7 @@ export default {
     testing: "Testing…",
     testOk: "✓ Works",
     agents: "Agents",
+    workspace: "Layout",
   },
   agents: {
     title: "External agents",
@@ -152,6 +155,15 @@ export default {
     sees: "sees: {what}",
     noProject: "open a project so I can see & edit it",
     applied: "✏ {n} change(s) applied",
+  },
+  workspace: {
+    intro: "Save your window arrangement (tree width + copilot position & size) so it's the same every time — or restore/reset it.",
+    save: "Save current layout",
+    restore: "Restore saved layout",
+    resetBtn: "Reset to default",
+    saved: "✓ Layout saved",
+    restored: "✓ Restored",
+    resetMsg: "✓ Reset to default",
   },
   projectCfg: {
     gear: "Project setup",

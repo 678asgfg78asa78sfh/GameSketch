@@ -19,7 +19,7 @@ function loadUi() {
 // Global copilot chat — persistent, context-aware, movable + resizable (like a little window).
 export default function ChatWidget() {
   const { t, lang } = useT();
-  const { work, bumpReload } = useWork();
+  const { work, bumpReload, layoutTick } = useWork();
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState(loadMsgs);
   const [input, setInput] = useState("");
@@ -32,6 +32,8 @@ export default function ChatWidget() {
   useEffect(() => { try { localStorage.setItem(STORE, JSON.stringify(msgs.slice(-100))); } catch { /* ignore */ } }, [msgs]);
   useEffect(() => { try { localStorage.setItem(UI_STORE, JSON.stringify(ui)); } catch { /* ignore */ } }, [ui]);
   useEffect(() => { if (open && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight; }, [msgs, open, busy]);
+  // re-read geometry when a saved layout is applied or reset
+  useEffect(() => { setUi(loadUi()); }, [layoutTick]);
 
   const onMove = useCallback((e) => {
     const d = drag.current; if (!d) return;

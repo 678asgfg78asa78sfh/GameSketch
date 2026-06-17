@@ -7,9 +7,14 @@ const Ctx = createContext(null);
 export function WorkProvider({ children }) {
   const [work, setWorkState] = useState({ slug: null, nodeId: null });
   const [reloadKey, setReloadKey] = useState(0);
+  const [layoutTick, setLayoutTick] = useState(0); // bumped when the saved layout is applied/reset
   const setWork = useCallback((patch) => setWorkState((w) => ({ ...w, ...patch })), []);
   const bumpReload = useCallback(() => setReloadKey((k) => k + 1), []);
-  const value = useMemo(() => ({ work, setWork, reloadKey, bumpReload }), [work, reloadKey, setWork, bumpReload]);
+  const reloadLayout = useCallback(() => setLayoutTick((k) => k + 1), []);
+  const value = useMemo(
+    () => ({ work, setWork, reloadKey, bumpReload, layoutTick, reloadLayout }),
+    [work, reloadKey, layoutTick, setWork, bumpReload, reloadLayout]
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

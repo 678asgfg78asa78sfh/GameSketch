@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { useT } from "../i18n/index.jsx";
+import { useWork } from "../workContext.jsx";
+import { saveBaseline, applyBaseline, resetLayout, hasBaseline } from "../layout.js";
 import LangPicker from "./LangPicker.jsx";
 
-const SECTIONS = ["language", "password", "ai", "agents", "howto"];
+const SECTIONS = ["language", "password", "ai", "agents", "workspace", "howto"];
 
 export default function SettingsPanel({ slug, onClose }) {
   const { t } = useT();
@@ -31,6 +33,7 @@ export default function SettingsPanel({ slug, onClose }) {
         {section === "password" && <PasswordSection />}
         {section === "ai" && <AiSection />}
         {section === "agents" && <AgentsSection />}
+        {section === "workspace" && <WorkspaceSection />}
         {section === "howto" && <HowtoSection slug={slug} />}
       </div>
     </div>
@@ -47,6 +50,24 @@ function LanguageSection() {
     <div style={{ display: "grid", gap: 12 }}>
       <Label>{t("settings.language")}</Label>
       <LangPicker />
+    </div>
+  );
+}
+
+function WorkspaceSection() {
+  const { t } = useT();
+  const { reloadLayout } = useWork();
+  const [msg, setMsg] = useState("");
+  const [hasBase, setHasBase] = useState(hasBaseline());
+  return (
+    <div style={{ display: "grid", gap: 14, maxWidth: 460 }}>
+      <p style={{ color: "var(--text-dim)", fontSize: 13.5, margin: 0, lineHeight: 1.6 }}>{t("workspace.intro")}</p>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button className="btn btn-primary" onClick={() => { saveBaseline(); setHasBase(true); setMsg(t("workspace.saved")); }}>{t("workspace.save")}</button>
+        <button className="btn" disabled={!hasBase} onClick={() => { if (applyBaseline()) { reloadLayout(); setMsg(t("workspace.restored")); } }}>{t("workspace.restore")}</button>
+        <button className="btn btn-ghost" onClick={() => { resetLayout(); reloadLayout(); setMsg(t("workspace.resetMsg")); }}>{t("workspace.resetBtn")}</button>
+      </div>
+      {msg && <div style={{ color: "var(--content)", fontSize: 13 }}>{msg}</div>}
     </div>
   );
 }

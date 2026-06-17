@@ -4,7 +4,7 @@ import "@excalidraw/excalidraw/index.css";
 import { api } from "../api.js";
 import { useT } from "../i18n/index.jsx";
 
-export default function CanvasPane({ slug, node }) {
+export default function CanvasPane({ slug, node, maximized }) {
   const { t } = useT();
   const [initial, setInitial] = useState(null);
   const saveTimer = useRef(null);
@@ -20,7 +20,7 @@ export default function CanvasPane({ slug, node }) {
   if (!initial) return <div className="mono">{t("editor.canvasLoading")}</div>;
 
   return (
-    <div style={{ height: "68vh", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border)" }}>
+    <div style={{ height: maximized ? "calc(100vh - 230px)" : "68vh", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border)" }}>
       <Excalidraw theme="dark" initialData={initial}
         onChange={(elements, appState) => {
           clearTimeout(saveTimer.current);

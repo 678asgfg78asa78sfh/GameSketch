@@ -8,10 +8,11 @@ import { DEFAULT_CATEGORIES } from "../pillars.js";
 
 export default function Project({ slug, me, onBack }) {
   const { t } = useT();
-  const { setWork, reloadKey } = useWork();
+  const { setWork, reloadKey, layoutTick } = useWork();
   const [project, setProject] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [sideW, setSideW] = useState(() => { try { return Number(localStorage.getItem("gs_sidebar_w")) || 340; } catch { return 340; } });
+  const [maximized, setMaximized] = useState(false);
   const splitter = useRef(null);
 
   const reload = useCallback(async () => setProject(await api.project(slug)), [slug]);
@@ -20,6 +21,15 @@ export default function Project({ slug, me, onBack }) {
   // let the copilot see which node is open
   useEffect(() => { setWork({ slug, nodeId: selectedId }); }, [slug, selectedId, setWork]);
   useEffect(() => { try { localStorage.setItem("gs_sidebar_w", String(sideW)); } catch { /* ignore */ } }, [sideW]);
+  // re-read sidebar width when a saved layout is applied or reset
+  useEffect(() => { try { setSideW(Number(localStorage.getItem("gs_sidebar_w")) || 340); } catch { /* ignore */ } }, [layoutTick]);
+  // Esc exits the maximized editor
+  useEffect(() => {
+    if (!maximized) return;
+    const onKey = (e) => { if (e.key === "Escape") setMaximized(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [maximized]);
 
   const onSplitMove = useCallback((e) => {
     const d = splitter.current; if (!d) return;
@@ -47,16 +57,21 @@ export default function Project({ slug, me, onBack }) {
         </div>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: `${sideW}px 8px 1fr`, gap: 8, minHeight: 0 }}>
-        <aside className="glass" style={{ overflow: "auto", padding: 16 }}>
-          <Tree project={project} selectedId={selectedId} onSelect={setSelectedId} onChanged={reload} />
-        </aside>
-        <div onPointerDown={startSplit} title="⇔" style={{ cursor: "col-resize", display: "grid", placeItems: "center", touchAction: "none" }}>
-          <div style={{ width: 3, height: 44, borderRadius: 3, background: "var(--border-strong)" }} />
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: maximized ? "1fr" : `${sideW}px 8px 1fr`, gap: 8, minHeight: 0 }}>
+        {!maximized && (
+          <>
+            <aside className="glass" style={{ overflow: "auto", padding: 16 }}>
+              <Tree project={project} selectedId={selectedId} onSelect={setSelectedId} onChanged={reload} />
+            </aside>
+            <div onPointerDown={startSplit} title="⇔" style={{ cursor: "col-resize", display: "grid", placeItems: "center", touchAction: "none" }}>
+              <div style={{ width: 3, height: 44, borderRadius: 3, background: "var(--border-strong)" }} />
+            </div>
+          </>
+        )}
         <main className="glass" style={{ overflow: "auto" }}>
           {selected ? (
-            <NodeEditor key={selected.id} slug={slug} node={selected} onChanged={reload} />
+            <NodeEditor key={selected.id} slug={slug} node={selected} onChanged={reload}
+              maximized={maximized} onToggleMaximize={() => setMaximized((m) => !m)} />
           ) : (
             <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--text-faint)", textAlign: "center", padding: 40 }}>
               <div>

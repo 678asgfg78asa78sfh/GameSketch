@@ -60,6 +60,8 @@ export default {
     kindNote: "Notiz",
     canvasEngineLoading: "Canvas-Engine lädt…",
     canvasLoading: "Canvas lädt…",
+    maximize: "Maximieren (volle Breite)",
+    restore: "Wiederherstellen (Esc)",
     tabs: { edit: "Text", preview: "Vorschau", canvas: "Canvas", history: "Verlauf", assist: "Assist" },
   },
   attachments: {
@@ -118,6 +120,7 @@ export default {
     testing: "Teste…",
     testOk: "✓ Funktioniert",
     agents: "Agenten",
+    workspace: "Layout",
   },
   agents: {
     title: "Externe Agenten",
@@ -152,6 +155,15 @@ export default {
     sees: "sieht: {what}",
     noProject: "öffne ein Projekt, damit ich es sehen & bearbeiten kann",
     applied: "✏ {n} Änderung(en) angewendet",
+  },
+  workspace: {
+    intro: "Speichere deine Fenster-Anordnung (Baum-Breite + Copilot-Position & -Größe), damit sie immer gleich ist — oder stelle sie wieder her / setze sie zurück.",
+    save: "Aktuelles Layout speichern",
+    restore: "Gespeichertes Layout laden",
+    resetBtn: "Auf Standard zurücksetzen",
+    saved: "✓ Layout gespeichert",
+    restored: "✓ Wiederhergestellt",
+    resetMsg: "✓ Auf Standard zurückgesetzt",
   },
   projectCfg: {
     gear: "Projekt-Konfig",
