@@ -23,9 +23,19 @@ export async function buildServer() {
   // Serve built frontend in production; in dev, Vite serves the UI separately.
   const dist = join(__dirname, "..", "web", "dist");
   if (existsSync(dist)) {
-    await app.register(fastifyStatic, { root: dist });
+    await app.register(fastifyStatic, {
+      root: dist,
+      cacheControl: false, // we set Cache-Control ourselves below (else static overrides it)
+      setHeaders(res, p) {
+        // Hashed assets are immutable -> cache hard. index.html must never be cached,
+        // otherwise reloads keep serving an old bundle after an update.
+        if (/[\\/]assets[\\/]/.test(p)) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        else res.setHeader("Cache-Control", "no-cache");
+      },
+    });
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith("/api")) return reply.code(404).send({ error: "not found" });
+      reply.header("Cache-Control", "no-cache");
       return reply.sendFile("index.html"); // SPA fallback
     });
   }

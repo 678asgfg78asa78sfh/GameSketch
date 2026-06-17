@@ -77,7 +77,7 @@ export default function ChatWidget() {
   }
 
   const ctxLabel = work.slug
-    ? t("chat.sees", { what: work.nodeTitle ? `${work.slug} › ✎ ${work.nodeTitle}` : work.slug })
+    ? t("chat.sees", { what: work.nodeTitle ? `${work.slug} › ✎ ${work.nodeTitle}` : `${work.slug} · ${t("chat.wholeProject")}` })
     : t("chat.noProject");
 
   return (
@@ -86,7 +86,7 @@ export default function ChatWidget() {
         <span style={{ fontSize: 16 }}>✦</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>{t("chat.title")}</div>
-          <div className="mono" style={{ fontSize: 10.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ctxLabel}</div>
+          <div className="mono" style={{ fontSize: 11, color: work.nodeTitle ? "var(--spark)" : "var(--text-dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ctxLabel}</div>
         </div>
         {msgs.length > 0 && <button className="btn btn-ghost btn-icon" title={t("chat.clear")} onPointerDown={(e) => e.stopPropagation()} onClick={() => setMsgs([])} style={{ fontSize: 13 }}>🗑</button>}
         <button className="btn btn-ghost btn-icon" onPointerDown={(e) => e.stopPropagation()} onClick={() => setOpen(false)} style={{ fontSize: 15 }}>✕</button>

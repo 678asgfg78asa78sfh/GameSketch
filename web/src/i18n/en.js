@@ -153,6 +153,7 @@ export default {
     clear: "Clear",
     empty: "Hi! I can see your design and change it directly — e.g. “write a gameloop for a pixel-art roguelike, with permadeath”.",
     sees: "sees: {what}",
+    wholeProject: "whole project",
     noProject: "open a project so I can see & edit it",
     applied: "✏ {n} change(s) applied",
   },
