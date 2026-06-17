@@ -25,3 +25,21 @@ test("unauthenticated /api/projects is 401", async () => {
   assert.equal(res.statusCode, 401);
   await app.close();
 });
+
+test("change password: wrong current 401, correct rotates and new password logs in", async () => {
+  const app = await buildServer();
+  // user ms/pw already exists from the first test (shared data dir within this file)
+  const cookie = (await app.inject({ method: "POST", url: "/api/auth/login", payload: { name: "ms", password: "pw" } }))
+    .cookies.find((c) => c.name === "gs_session").value;
+  const cj = { gs_session: cookie };
+
+  let res = await app.inject({ method: "POST", url: "/api/auth/password", cookies: cj, payload: { current: "nope", next: "fresh" } });
+  assert.equal(res.statusCode, 401);
+
+  res = await app.inject({ method: "POST", url: "/api/auth/password", cookies: cj, payload: { current: "pw", next: "fresh" } });
+  assert.equal(res.statusCode, 200);
+
+  assert.equal((await app.inject({ method: "POST", url: "/api/auth/login", payload: { name: "ms", password: "pw" } })).statusCode, 401);
+  assert.equal((await app.inject({ method: "POST", url: "/api/auth/login", payload: { name: "ms", password: "fresh" } })).statusCode, 200);
+  await app.close();
+});

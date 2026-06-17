@@ -29,4 +29,16 @@ export default async function authRoutes(app) {
   });
 
   app.get("/api/auth/me", { preHandler: requireAuth }, async (req) => ({ name: req.user.name }));
+
+  app.post("/api/auth/password", { preHandler: requireAuth }, async (req, reply) => {
+    const { current, next } = req.body || {};
+    if (!current || !next) return reply.code(400).send({ error: "current+next required" });
+    const cfg = loadConfig();
+    const user = cfg.users.find((u) => u.name === req.user.name);
+    if (!user || !verifyPassword(current, user))
+      return reply.code(401).send({ error: "wrong current password" });
+    Object.assign(user, hashPassword(next));
+    saveConfig(cfg);
+    return { ok: true };
+  });
 }
