@@ -30,6 +30,19 @@ function applyAi(ai, body = {}) {
   return ai;
 }
 
+// Build a candidate ai config from posted form values for a model-pull / test, but NEVER
+// reuse the stored API key against a *different* endpoint than it was saved for — otherwise
+// a request that swaps baseUrl to an attacker host would leak the key. Require the caller to
+// re-supply the key whenever they change the endpoint.
+function candidateAi(req) {
+  const stored = loadConfig().ai;
+  const ai = applyAi(loadConfig().ai, req.body?.ai || {});
+  if (ai.openai.baseUrl !== stored.openai.baseUrl && !req.body?.ai?.openai?.apiKey) {
+    ai.openai.apiKey = "";
+  }
+  return ai;
+}
+
 export default async function settingsRoutes(app) {
   app.get("/api/settings", guard, async () => ({ ai: publicAi(loadConfig().ai) }));
 
@@ -43,9 +56,7 @@ export default async function settingsRoutes(app) {
   // Pull the model list from the provider. Uses the posted (unsaved) form values so the
   // user can load models before saving; falls back to the stored key when none was typed.
   app.post("/api/settings/ai/models", guard, async (req, reply) => {
-    const cfg = loadConfig();
-    const candidate = { ...cfg, ai: applyAi(loadConfig().ai, req.body?.ai || {}) };
-    if (!candidate.ai.openai.apiKey) candidate.ai.openai.apiKey = cfg.ai.openai.apiKey;
+    const candidate = { ...loadConfig(), ai: candidateAi(req) };
     try {
       return { models: await listModels(candidate) };
     } catch (e) {
@@ -55,9 +66,7 @@ export default async function settingsRoutes(app) {
 
   // Quick connectivity check against the (posted, possibly unsaved) provider config.
   app.post("/api/settings/ai/test", guard, async (req, reply) => {
-    const cfg = loadConfig();
-    const candidate = { ...cfg, ai: applyAi(loadConfig().ai, req.body?.ai || {}) };
-    if (!candidate.ai.openai.apiKey) candidate.ai.openai.apiKey = cfg.ai.openai.apiKey;
+    const candidate = { ...loadConfig(), ai: candidateAi(req) };
     try {
       const { text } = await chat(candidate, {
         system: "You are a connectivity test. Reply with exactly: OK",
