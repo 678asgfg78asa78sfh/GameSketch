@@ -1,111 +1,125 @@
+<div align="center">
+
 # GameSketch
 
-Lokales Web-Tool, um Spielideen als **lebenden Baum** entlang von 5 Säulen aufs Papier zu bringen
-— Knoten als Markdown, versioniert mit Git, mit Doodle-Canvas, Datei-Anhängen, Autor pro Änderung
-und einer KI-Lese-API zum sauberen Rausziehen. **Läuft komplett lokal. Funkt nirgendwohin.**
+**Put your game ideas on paper as a living tree — local-first, AI-readable, no phone-home.**
 
-## Die 5 Säulen
+![GameSketch — the project view](docs/hero.png)
 
-1. **Gameloop** – wie macht's Spaß, Core Loop
-2. **Grafikstil** – Stil + Referenzen
-3. **Inhalt** – wohin die Reise geht (core / side / future)
-4. **Stränge** – Story, Crafting, Kausalitäten (tief verschachtelt)
-5. **Scope** – wie weit alles geht, Asset-Umfang
+![license](https://img.shields.io/badge/license-MIT-7c8cff)
+&nbsp;![node](https://img.shields.io/badge/node-%E2%89%A5%2020-2ee6a8)
+&nbsp;![local-first](https://img.shields.io/badge/local--first-no%20tracking-ff6b9d)
 
-## Voraussetzungen
+</div>
 
-- **Node.js ≥ 20** (getestet mit 24)
-- **git** im PATH (jedes Projekt ist ein eigenes Git-Repo → Historie, Autor, Wiederherstellung)
+## What it is
 
-## Installation
+GameSketch is a small local web app for turning a game idea into a structured, living **Game Design Document** — instead of one sprawling text file. Every idea is a node in a tree, organised along 5 pillars. Nodes are plain **Markdown files versioned with Git**, so nothing is ever lost, you can see who changed what, and an AI can read the whole design straight off disk or through a small read-API.
+
+It runs as **one Node process on your own machine**. No CDNs, no telemetry, no accounts in the cloud.
+
+## The 5 pillars
+
+Every project starts with these (you can rename / recolour / add / remove them per project):
+
+1. **Gameloop** — how it's fun; the core loop
+2. **Art style** — the look, with references
+3. **Content** — where the journey goes; tagged `core` / `side` / `future`
+4. **Threads** — detailed strands: story, crafting, causality (nest as deep as you like)
+5. **Scope** — how far it all goes; asset budget
+
+## Highlights
+
+- 🌳 **5-pillar idea tree** — add / nest / reorder, status `core·side·future`, alternatives & notes, outliner keys (Enter = sibling, Tab = child)
+- ✍️ **Markdown editor** with live preview and autosave
+- 🎨 **Doodle canvas** per node (Excalidraw, fully offline)
+- 📎 **Drag & drop attachments** — sketches, refs, anything
+- 🕓 **Git history + one-click restore**, with an author on every change
+- 🤖 **AI** — a read-API for external agents *and* an in-app copilot, pointed at a local endpoint, OpenRouter, or the local `claude` CLI
+- 🌍 **English / Deutsch / Русский**
+- 🔒 **No phone-home** — local fonts, no CDNs, no telemetry
+
+## Requirements
+
+- **Node.js ≥ 20** (tested on 24)
+- **git** on your `PATH` (each project is its own git repo → history, author, restore)
+
+## Quick start
+
+**Production (single process, recommended):**
 
 ```bash
 npm install
+npm run build      # builds the frontend into web/dist
+npm start          # serves UI + API on http://127.0.0.1:4321
 ```
 
-## Starten
+Other port: `PORT=8080 npm start`.
 
-**Produktion (ein Prozess, empfohlen):**
+**Development (hot reload, two processes):**
+
 ```bash
-npm run build      # baut das Frontend nach web/dist
-npm start          # serviert UI + API auf http://127.0.0.1:4321
-```
-Optional anderer Port: `PORT=8080 npm start`.
-
-**Entwicklung (Hot Reload, zwei Prozesse):**
-```bash
-npm run dev:server   # API auf :4321
-npm run dev:web      # Vite UI auf :5173 (proxyt /api -> :4321)
+npm run dev:server   # API on :4321
+npm run dev:web      # Vite UI on :5173 (proxies /api -> :4321)
 ```
 
-Beim ersten Aufruf legst du im Browser deinen Account an (user:password — keine Rollen,
-nur damit jede Änderung einen Autor hat → team-tauglich). Im Setup wählst du die
-**Sprache** (Englisch / Deutsch / Russisch); später jederzeit umstellbar über das
-**Zahnrad unten links** (dort auch: Passwort ändern, KI-Provider, How-To).
+On first launch you pick a **language** and create an account (`user:password` — no roles, it just stamps an author on every change, so the app is team-ready without extra complexity). Everything is later adjustable via the **gear (bottom-left)**: language, password, AI provider, agents, and a How-To.
 
-## Wo liegen meine Daten?
+## Where your data lives
 
-Alles unter **`data/`** (gitignored vom App-Repo):
+Everything sits under **`data/`** (git-ignored by the app repo):
 
 ```
 data/
-  config.json              # Users + KI-Endpunkt
-  projects/<slug>/         # je ein eigenes Git-Repo
-    project.md             # Projekt-Meta
-    nodes/<säule>/*.md     # jeder Knoten = Markdown + Frontmatter
-    canvases/*.excalidraw  # Doodles (JSON)
-    assets/                # hochgeladene Dateien
+  config.json              # users + AI provider settings
+  projects/<slug>/         # each project is its own git repo
+    project.md             # project meta + categories
+    nodes/<category>/*.md  # each node = Markdown + frontmatter
+    canvases/*.excalidraw  # doodles (JSON)
+    assets/                # uploaded files
 ```
 
-**Backup = `data/` kopieren.** Wiederherstellung eines Knoten-Stands geht im UI (Tab „history" → Restore).
+**Backup = copy `data/`.** Restoring an earlier version of a node is built into the UI (node → **History** tab → Restore).
 
-## KI-Anbindung
+## AI
 
-Im **Zahnrad unten links → KI** wählst du einen Provider (kein `config.json`-Gefummel nötig):
+Open the **gear → AI** and pick a provider (no `config.json` editing needed):
 
-- **Claude CLI** (`claude -p`) — ruft das lokale `claude`-Binary auf, kein API-Key.
-- **API-Key (OpenRouter & OpenAI-kompatibel)** — `baseUrl` + `apiKey` + `model`,
-  Button **„Modelle laden"** zieht die Modellliste vom Provider.
+- **Local endpoint** — any OpenAI-compatible server (LM Studio, Ollama, …). Stays fully offline.
+- **OpenRouter / API key** — `baseUrl` + `apiKey` + `model`; a **Load models** button pulls the list.
+- **Claude CLI** — calls your local `claude` binary, no API key.
 
-Dann erscheinen im Knoten-Tab **„assist"** die Buttons *Lücken finden*, *Zusammenfassen*,
-*Alternative*. Die schicken den jeweiligen Teilbaum an den von **dir** gewählten Provider —
-die Antwort kommt in deiner UI-Sprache zurück.
+Then the node **Assist** tab offers *Find gaps*, *Summarise*, *Suggest alternative* — each sends the relevant subtree to the provider **you** chose. There's also a project-wide **copilot** (the ✦ button).
 
-> Die Einstellungen landen weiterhin in `data/config.json` (Block `ai`); der API-Key wird
-> der UI nie zurückgegeben. Alte `{ baseUrl, model, apiKey }`-Configs werden automatisch migriert.
+## AI read-API (for external agents)
 
-## KI-Lese-API (für externe Agents)
-
-Damit ein externer Agent (z. B. Claude Code) das ganze Design runterbrechen kann
-(Session-Cookie nötig — im Browser eingeloggt sein):
+An external agent (e.g. the Claude Code CLI) can pull a whole design out and reason over it. Agents **pair** with the app to get a token (gear → **Agents** → Accept), then call the read endpoints:
 
 ```
-GET /api/projects/:slug/export.json            # voller, verschachtelter Baum
-GET /api/projects/:slug/export.md              # ganzes GDD flach als Markdown
-GET /api/projects/:slug/nodes/:id/subtree.json # beliebiger Teilbaum
+GET /api/projects/:slug/export.json            # full nested tree
+GET /api/projects/:slug/export.md              # whole GDD flattened to Markdown
+GET /api/projects/:slug/nodes/:id/subtree.json # any subtree
 GET /api/projects/:slug/nodes/:id/subtree.md
 ```
 
-Vollständige Anleitung inkl. Cookie-Handling und einem `claude`-Beispiel: **[HOWTO.md](HOWTO.md)**
-(im Zahnrad → How-To sind die URLs mit deinem Projekt-Slug vorausgefüllt, mit Kopier-Button).
+Full guide (pairing, tokens, read-only vs. read+write, a `claude` example): **[HOWTO.md](HOWTO.md)**.
 
-## „Funkt nirgendwohin"-Garantie
+## "Phones home to nowhere"
 
-Keine CDNs, keine Google Fonts (Fonts lokal gebündelt via fontsource), keine Telemetrie,
-keine Auto-Update-Pings. Excalidraw läuft vollständig offline. Die App selbst funkt nirgendwohin.
+No CDNs, no Google Fonts (fonts are bundled locally via fontsource), no telemetry, no auto-update pings. Excalidraw runs fully offline. The app itself talks to no one.
 
-**Ausnahme = KI:** Die *assist*-Funktion geht an den Provider, den **du** im Zahnrad wählst.
-Wählst du einen Cloud-Provider (OpenRouter) oder `claude -p`, verlässt der jeweilige
-Design-Ausschnitt deinen Rechner Richtung dieses Anbieters. Ein rein lokaler OpenAI-kompatibler
-Endpunkt (z. B. LM Studio / Ollama) bleibt vollständig offline. Du entscheidest pro Provider.
+**The one exception is AI:** the *assist* / *copilot* feature talks to the provider **you** select in the gear. A purely local endpoint (LM Studio / Ollama) stays offline; choosing a cloud provider (OpenRouter) or `claude -p` sends that design excerpt to that provider. You decide, per provider. The server only binds `127.0.0.1` — reachable from your machine only.
 
 ## Tests
 
 ```bash
-npm test     # Backend-Suite (storage, auth, API, AI-export)
+npm test     # backend suite: storage, auth, API, AI export
 ```
 
 ## Tech
 
-Node + Fastify 5 · Markdown (gray-matter) + Git · React + Vite · Excalidraw · @dnd-kit · motion.
-Kein Docker. Ein Prozess. Alles lokal.
+Node + Fastify 5 · Markdown (gray-matter) + Git · React + Vite · Excalidraw · @dnd-kit · motion · fontsource (Bricolage Grotesque / Hanken Grotesk / JetBrains Mono). No Docker. One process. All local.
+
+## License
+
+[MIT](LICENSE) © 2026 ms
