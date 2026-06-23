@@ -1,4 +1,4 @@
-# GameSketch „friend-ready" — Design / Spec
+# GameSketch "friend-ready" — Design / Spec
 
 **Date:** 2026-06-16
 **Goal:** Make GameSketch ready to hand to a friend (Windows, has Node): multilingual UI,
@@ -50,7 +50,7 @@ DnD (drop-onto-node = child only), translating the long HOWTO.md (EN only; in-ap
   - **AI** — provider radio:
     - `claude-cli`: optional model (dropdown from a known Claude model list), optional binary path
       (default `claude`). No API key.
-    - `openai` (OpenRouter & compatible): `baseUrl`, `apiKey`, `model` + **„Load models"** button
+    - `openai` (OpenRouter & compatible): `baseUrl`, `apiKey`, `model` + **"Load models"** button
       → `api.pullModels` populates the dropdown.
     - Save → `api.saveSettings`.
   - **How-To** — translated short guide + concrete read-API URLs for the open project (copy buttons);
@@ -88,7 +88,7 @@ DnD (drop-onto-node = child only), translating the long HOWTO.md (EN only; in-ap
   (never leak the secret to the client).
 - `PUT /api/settings` (guarded): accepts new `ai`; if `openai.apiKey` omitted/null → keep existing,
   empty string → clear.
-- `POST /api/settings/ai/models` (guarded): body = candidate ai config (so „Load models" works before
+- `POST /api/settings/ai/models` (guarded): body = candidate ai config (so "Load models" works before
   saving) → `{ models: string[] }`. Errors return 400 with message.
 - Register `settings.routes.js` in `routes/index.js`.
 
@@ -111,7 +111,7 @@ requirement, and a worked example driving them with `claude` / `curl` against a 
 
 ## Privacy note
 
-README currently claims „funkt nirgendwohin". OpenRouter and `claude -p` reach the cloud. Update
+README currently claims "nothing is sent anywhere". OpenRouter and `claude -p` reach the cloud. Update
 README + `AssistPanel` copy to: “AI calls go to the provider you choose (local endpoint, OpenRouter,
 or Claude CLI); everything else stays local.”
 

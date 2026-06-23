@@ -42,9 +42,9 @@
 ```js
 export const PILLARS = [
   { slug: "gameloop", label: "Gameloop" },
-  { slug: "artstyle", label: "Grafikstil" },
-  { slug: "content",  label: "Inhalt" },
-  { slug: "threads",  label: "Stränge" },
+  { slug: "artstyle", label: "Art Style" },
+  { slug: "content",  label: "Content" },
+  { slug: "threads",  label: "Threads" },
   { slug: "scope",    label: "Scope" },
 ];
 ```
@@ -530,9 +530,9 @@ test("subtreeNodes returns node + descendants", () => {
 ```js
 export const PILLARS = [
   { slug: "gameloop", label: "Gameloop" },
-  { slug: "artstyle", label: "Grafikstil" },
-  { slug: "content",  label: "Inhalt" },
-  { slug: "threads",  label: "Stränge" },
+  { slug: "artstyle", label: "Art Style" },
+  { slug: "content",  label: "Content" },
+  { slug: "threads",  label: "Threads" },
   { slug: "scope",    label: "Scope" },
 ];
 
@@ -552,7 +552,7 @@ export function buildTree(nodes) {
 }
 
 function emitNode(n, depth, out) {
-  const tag = n.kind === "alternative" ? " (Alternative)" : n.kind === "note" ? " (Notiz)" : "";
+  const tag = n.kind === "alternative" ? " (Alternative)" : n.kind === "note" ? " (Note)" : "";
   out.push(`${"#".repeat(Math.min(depth, 6))} ${n.title} [${n.status}]${tag}`);
   if (n.body && n.body.trim()) out.push("", n.body.trim());
   out.push("");
@@ -587,7 +587,7 @@ export function subtreeToMarkdown(project, nodes, id) {
   const sub = subtreeNodes(nodes, id);
   const tree = buildTree(sub.map((n) => (n.id === id ? { ...n, parent: null } : n)));
   const root = Object.values(tree).flat()[0];
-  const out = [`# ${project.title || "Untitled"} — Teilbaum`, ""];
+  const out = [`# ${project.title || "Untitled"} — Subtree`, ""];
   if (root) emitNode(root, 2, out);
   return out.join("\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
 }
@@ -702,7 +702,7 @@ export async function createNode(slug, input, author) {
   const id = ulid();
   const ts = nowIso();
   const n = {
-    id, title: input.title || "Neue Idee",
+    id, title: input.title || "New Idea",
     pillar: input.pillar, status: input.status || "core",
     kind: input.kind || "idea", parent: input.parent ?? null,
     order: input.order ?? Date.now() % 100000,
@@ -1429,14 +1429,14 @@ import { getProject } from "../storage/projects.js";
 import { subtreeToMarkdown, flattenToMarkdown } from "../storage/tree.js";
 
 const PROMPTS = {
-  gaps: "Du bist Game-Design-Co-Pilot. Finde Lücken, Widersprüche und offene Fragen in folgendem Design-Ausschnitt. Antworte in knappen Stichpunkten auf Deutsch.",
-  summarize: "Fasse den folgenden Design-Strang in 3-5 Sätzen klar zusammen (Deutsch).",
-  alternative: "Schlage 2-3 konkrete alternative Design-Ansätze zum folgenden Ausschnitt vor (Deutsch, je 1-2 Sätze).",
+  gaps: "You are a game-design co-pilot. Find gaps, contradictions and open questions in the following design excerpt. Answer in concise bullet points in English.",
+  summarize: "Summarize the following design thread clearly in 3-5 sentences (English).",
+  alternative: "Propose 2-3 concrete alternative design approaches to the following excerpt (English, 1-2 sentences each).",
 };
 
 export async function assist(slug, { scope, action }) {
   const cfg = loadConfig();
-  if (!cfg.ai.baseUrl) throw new Error("Kein lokaler KI-Endpunkt konfiguriert (data/config.json -> ai.baseUrl).");
+  if (!cfg.ai.baseUrl) throw new Error("No local AI endpoint configured (data/config.json -> ai.baseUrl).");
   const project = await getProject(slug);
   const context = scope?.nodeId
     ? subtreeToMarkdown(project, project.nodes, scope.nodeId)
@@ -1455,7 +1455,7 @@ export async function assist(slug, { scope, action }) {
       stream: false,
     }),
   });
-  if (!res.ok) throw new Error(`KI-Endpunkt Fehler ${res.status}`);
+  if (!res.ok) throw new Error(`AI endpoint error ${res.status}`);
   const data = await res.json();
   return { text: data.choices?.[0]?.message?.content ?? "" };
 }
@@ -1684,12 +1684,12 @@ export default function Login({ onAuthed }) {
         style={{ background: "var(--panel)", padding: 28, borderRadius: "var(--radius)",
                  boxShadow: "var(--shadow)", width: 320, display: "grid", gap: 12 }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>GameSketch</h1>
-        <p style={{ color: "var(--muted)", margin: 0 }}>{needsSetup ? "Ersten Account anlegen" : "Anmelden"}</p>
+        <p style={{ color: "var(--muted)", margin: 0 }}>{needsSetup ? "Create first account" : "Sign in"}</p>
         <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-        <input placeholder="Passwort" type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
+        <input placeholder="Password" type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
         {err && <div style={{ color: "#ff6b6b", fontSize: 13 }}>{err}</div>}
         <button type="submit" style={{ background: "var(--accent)", borderColor: "transparent" }}>
-          {needsSetup ? "Anlegen & Los" : "Rein"}
+          {needsSetup ? "Create & Go" : "Enter"}
         </button>
       </motion.form>
     </div>
@@ -1697,7 +1697,7 @@ export default function Login({ onAuthed }) {
 }
 ```
 
-- [ ] **Step 4: Manual verify** — Start both: `npm run dev:server` and `npm run dev:web`; open `http://127.0.0.1:5173`. Expected: first run shows "Ersten Account anlegen", create works, lands on Projects (next task). 
+- [ ] **Step 4: Manual verify** — Start both: `npm run dev:server` and `npm run dev:web`; open `http://127.0.0.1:5173`. Expected: first run shows "Create first account", create works, lands on Projects (next task). 
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -1727,13 +1727,13 @@ export default function Projects({ me, onOpen, onLogout }) {
   return (
     <div style={{ maxWidth: 960, margin: "0 auto", padding: 32 }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h1 style={{ margin: 0 }}>Deine Projekte</h1>
+        <h1 style={{ margin: 0 }}>Your Projects</h1>
         <div style={{ color: "var(--muted)" }}>{me.name} · <button onClick={onLogout}>Logout</button></div>
       </header>
       <form onSubmit={create} style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-        <input style={{ flex: 1 }} placeholder="Neues Projekt benennen…" value={title}
+        <input style={{ flex: 1 }} placeholder="Name a new project…" value={title}
           onChange={(e) => setTitle(e.target.value)} />
-        <button style={{ background: "var(--accent)", borderColor: "transparent" }}>+ Neu</button>
+        <button style={{ background: "var(--accent)", borderColor: "transparent" }}>+ New</button>
       </form>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 16 }}>
         <AnimatePresence>
@@ -1776,7 +1776,7 @@ const COLORS = { core: "var(--core)", side: "var(--side)", future: "var(--future
 const LABELS = { core: "Core", side: "Side", future: "Future" };
 export default function StatusBadge({ status, onClick }) {
   return (
-    <span onClick={onClick} title="Status wechseln"
+    <span onClick={onClick} title="Change status"
       style={{ cursor: onClick ? "pointer" : "default", fontSize: 11, fontWeight: 600,
         padding: "2px 8px", borderRadius: 999, color: "#0c0d11",
         background: COLORS[status] || "var(--muted)" }}>
@@ -1799,13 +1799,13 @@ export default function Project({ slug, me, onBack }) {
 
   const reload = useCallback(async () => setProject(await api.project(slug)), [slug]);
   useEffect(() => { reload(); }, [reload]);
-  if (!project) return <div style={{ padding: 24 }}>Lade…</div>;
+  if (!project) return <div style={{ padding: 24 }}>Loading…</div>;
 
   const selected = project.nodes.find((n) => n.id === selectedId) || null;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(280px,360px) 1fr", height: "100%" }}>
       <aside style={{ borderRight: "1px solid var(--line)", overflow: "auto", padding: 12 }}>
-        <button onClick={onBack} style={{ marginBottom: 12 }}>← Projekte</button>
+        <button onClick={onBack} style={{ marginBottom: 12 }}>← Projects</button>
         <h2 style={{ marginTop: 0 }}>{project.title}</h2>
         <Tree project={project} selectedId={selectedId}
           onSelect={setSelectedId} onChanged={reload} />
@@ -1813,7 +1813,7 @@ export default function Project({ slug, me, onBack }) {
       <main style={{ overflow: "auto" }}>
         {selected
           ? <NodeEditor key={selected.id} slug={slug} node={selected} onChanged={reload} />
-          : <div style={{ padding: 40, color: "var(--muted)" }}>Wähle oder erstelle einen Knoten ✨</div>}
+          : <div style={{ padding: 40, color: "var(--muted)" }}>Select or create a node ✨</div>}
       </main>
     </div>
   );
@@ -1840,9 +1840,9 @@ import TreeNode from "./TreeNode.jsx";
 
 const PILLARS = [
   ["gameloop", "Gameloop", "var(--gameloop)"],
-  ["artstyle", "Grafikstil", "var(--artstyle)"],
-  ["content", "Inhalt", "var(--content)"],
-  ["threads", "Stränge", "var(--threads)"],
+  ["artstyle", "Art Style", "var(--artstyle)"],
+  ["content", "Content", "var(--content)"],
+  ["threads", "Threads", "var(--threads)"],
   ["scope", "Scope", "var(--scope)"],
 ];
 
@@ -1860,7 +1860,7 @@ function nest(nodes) {
 export default function Tree({ project, selectedId, onSelect, onChanged }) {
   const roots = useMemo(() => nest(project.nodes), [project.nodes]);
   async function addRoot(pillar) {
-    const n = await api.createNode(project.slug, { pillar, title: "Neue Idee" });
+    const n = await api.createNode(project.slug, { pillar, title: "New Idea" });
     onSelect(n.id); onChanged();
   }
   async function onDragEnd(e) {
@@ -1904,11 +1904,11 @@ export default function TreeNode({ node, depth, slug, selectedId, onSelect, onCh
   const sel = node.id === selectedId;
 
   async function addChild() {
-    const n = await api.createNode(slug, { pillar: node.pillar, parent: node.id, title: "Neue Idee" });
+    const n = await api.createNode(slug, { pillar: node.pillar, parent: node.id, title: "New Idea" });
     onSelect(n.id); onChanged();
   }
   async function addSibling() {
-    const n = await api.createNode(slug, { pillar: node.pillar, parent: node.parent, title: "Neue Idee" });
+    const n = await api.createNode(slug, { pillar: node.pillar, parent: node.parent, title: "New Idea" });
     onSelect(n.id); onChanged();
   }
   function onKeyDown(e) {
@@ -1987,7 +1987,7 @@ export default function Attachments({ slug, node, onChanged }) {
     <div onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={onDrop}
       style={{ border: `1.5px dashed ${over ? "var(--accent)" : "var(--line)"}`, borderRadius: 12,
         padding: 12, transition: "border-color .15s", marginTop: 12 }}>
-      <div style={{ color: "var(--muted)", fontSize: 12, marginBottom: 8 }}>Dateien hierher ziehen</div>
+      <div style={{ color: "var(--muted)", fontSize: 12, marginBottom: 8 }}>Drag files here</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {(node.attachments || []).map((a) => (
           <a key={a} href={`/api/projects/${slug}/${a}`} target="_blank" rel="noreferrer"
@@ -2029,7 +2029,7 @@ export default function NodeEditor({ slug, node, onChanged }) {
   async function cycleStatus() {
     await api.updateNode(slug, node.id, { status: STATUS_CYCLE[node.status] }); onChanged();
   }
-  async function del() { if (confirm("Knoten löschen?")) { await api.deleteNode(slug, node.id); onChanged(); } }
+  async function del() { if (confirm("Delete node?")) { await api.deleteNode(slug, node.id); onChanged(); } }
 
   return (
     <div style={{ padding: 24, maxWidth: 860, margin: "0 auto" }}>
@@ -2037,7 +2037,7 @@ export default function NodeEditor({ slug, node, onChanged }) {
         <StatusBadge status={node.status} onClick={cycleStatus} />
         <select defaultValue={node.kind}
           onChange={(e) => { api.updateNode(slug, node.id, { kind: e.target.value }).then(onChanged); }}>
-          <option value="idea">Idee</option><option value="alternative">Alternative</option><option value="note">Notiz</option>
+          <option value="idea">Idea</option><option value="alternative">Alternative</option><option value="note">Note</option>
         </select>
         <button style={{ marginLeft: "auto" }} onClick={del}>🗑</button>
       </div>
@@ -2053,7 +2053,7 @@ export default function NodeEditor({ slug, node, onChanged }) {
 
       {tab === "edit" && (
         <textarea value={body} onChange={(e) => { setBody(e.target.value); queueSave({ body: e.target.value }); }}
-          style={{ width: "100%", minHeight: 360, resize: "vertical", lineHeight: 1.6 }} placeholder="Idee reinbuttern…" />
+          style={{ width: "100%", minHeight: 360, resize: "vertical", lineHeight: 1.6 }} placeholder="Pour your idea in…" />
       )}
       {tab === "preview" && <MarkdownView text={body} />}
       {tab === "canvas" && <CanvasPane slug={slug} node={node} />}
@@ -2094,7 +2094,7 @@ export default function CanvasPane({ slug, node }) {
   const [initial, setInitial] = useState(null);
   const saveTimer = useRef(null);
   useEffect(() => { api.canvas(slug, node.id).then((d) => setInitial(d || { elements: [], appState: {} })); }, [node.id]);
-  if (!initial) return <div style={{ color: "var(--muted)" }}>Lade Canvas…</div>;
+  if (!initial) return <div style={{ color: "var(--muted)" }}>Loading canvas…</div>;
   return (
     <div style={{ height: "70vh", borderRadius: 12, overflow: "hidden", border: "1px solid var(--line)" }}>
       <Excalidraw initialData={initial}
@@ -2131,7 +2131,7 @@ export default function HistoryPanel({ slug, node, onChanged }) {
   const [hist, setHist] = useState([]);
   useEffect(() => { api.history(slug, node.id).then(setHist); }, [node.id]);
   async function restore(commit) {
-    if (!confirm("Diesen Stand wiederherstellen?")) return;
+    if (!confirm("Restore this version?")) return;
     await api.restore(slug, node.id, commit); onChanged();
   }
   return (
@@ -2146,7 +2146,7 @@ export default function HistoryPanel({ slug, node, onChanged }) {
           <button onClick={() => restore(h.commit)}>↺ Restore</button>
         </div>
       ))}
-      {hist.length === 0 && <div style={{ color: "var(--muted)" }}>Noch keine Historie.</div>}
+      {hist.length === 0 && <div style={{ color: "var(--muted)" }}>No history yet.</div>}
     </div>
   );
 }
@@ -2169,7 +2169,7 @@ git commit -m "feat: per-node history panel with one-click restore"
 ```jsx
 import { useState } from "react";
 import { api } from "../api.js";
-const ACTIONS = [["gaps", "Lücken finden"], ["summarize", "Strang zusammenfassen"], ["alternative", "Alternative vorschlagen"]];
+const ACTIONS = [["gaps", "Find gaps"], ["summarize", "Summarize thread"], ["alternative", "Suggest alternative"]];
 export default function AssistPanel({ slug, node }) {
   const [out, setOut] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
   async function run(action) {
@@ -2182,15 +2182,15 @@ export default function AssistPanel({ slug, node }) {
       <div style={{ display: "flex", gap: 8 }}>
         {ACTIONS.map(([a, label]) => <button key={a} disabled={busy} onClick={() => run(a)}>{label}</button>)}
       </div>
-      {busy && <div style={{ color: "var(--muted)" }}>Denke nach… (lokaler Endpunkt)</div>}
-      {err && <div style={{ color: "#ff6b6b", fontSize: 13 }}>{err} — KI-Endpunkt in <code>data/config.json</code> setzen.</div>}
+      {busy && <div style={{ color: "var(--muted)" }}>Thinking… (local endpoint)</div>}
+      {err && <div style={{ color: "#ff6b6b", fontSize: 13 }}>{err} — set the AI endpoint in <code>data/config.json</code>.</div>}
       {out && <pre style={{ whiteSpace: "pre-wrap", background: "var(--panel)", padding: 14, borderRadius: 10 }}>{out}</pre>}
     </div>
   );
 }
 ```
 
-- [ ] **Step 2: Manual verify** — set `data/config.json` `ai.baseUrl` to a running local OpenAI-compatible server (e.g. `http://127.0.0.1:1234/v1`), click "Lücken finden", see a response. With no endpoint set, shows the friendly error.
+- [ ] **Step 2: Manual verify** — set `data/config.json` `ai.baseUrl` to a running local OpenAI-compatible server (e.g. `http://127.0.0.1:1234/v1`), click "Find gaps", see a response. With no endpoint set, shows the friendly error.
 
 - [ ] **Step 3: Commit**
 ```bash
