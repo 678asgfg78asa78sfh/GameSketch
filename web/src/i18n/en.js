@@ -71,6 +71,12 @@ export default {
     tooBig: "“{name}” is too large — max {max} MB.",
     failed: "Upload failed: {msg}",
   },
+  progress: {
+    new: "New",
+    needs_work: "Needs Work",
+    complete: "Complete",
+    tooltip: "Work status — click to cycle (New → Needs Work → Complete)",
+  },
   history: {
     loading: "loading…",
     none: "No history yet.",

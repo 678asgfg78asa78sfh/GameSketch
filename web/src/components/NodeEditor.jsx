@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import { api } from "../api.js";
 import StatusBadge from "./StatusBadge.jsx";
+import ProgressBadge, { PROGRESS_CYCLE } from "./ProgressBadge.jsx";
 import MarkdownView from "./MarkdownView.jsx";
 import Attachments from "./Attachments.jsx";
 import HistoryPanel from "./HistoryPanel.jsx";
@@ -33,6 +34,7 @@ export default function NodeEditor({ slug, node, onChanged, maximized, onToggleM
     }, 600);
   }
   async function cycleStatus() { await api.updateNode(slug, node.id, { status: STATUS_CYCLE[node.status] }); onChanged(); }
+  async function cycleProgress() { await api.updateNode(slug, node.id, { progress: PROGRESS_CYCLE[node.progress || "new"] }); onChanged(); }
   async function setKind(kind) { await api.updateNode(slug, node.id, { kind }); onChanged(); }
   async function del() { if (confirm(t("editor.confirmDelete", { title: node.title }))) { await api.deleteNode(slug, node.id); onChanged(); } }
 
@@ -45,6 +47,7 @@ export default function NodeEditor({ slug, node, onChanged, maximized, onToggleM
           <option value="alternative">{t("editor.kindAlternative")}</option>
           <option value="note">{t("editor.kindNote")}</option>
         </select>
+        <ProgressBadge progress={node.progress || "new"} onClick={cycleProgress} />
         <span className="mono" style={{ marginLeft: 4, color: saved ? "var(--content)" : "var(--text-faint)" }}>
           {saved ? t("editor.saved") : t("editor.saving")}
         </span>

@@ -1,12 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 process.env.GS_DATA_DIR = mkdtempSync(join(tmpdir(), "gs-nodes-"));
 const { createProject } = await import("./projects.js");
 const { createNode, listNodes, getNode, updateNode, moveNode, deleteNode, nodeHistory, restoreNode } = await import("./nodes.js");
+const { nodePath } = await import("./paths.js");
 
 const author = { name: "ms", email: "ms@local" };
 
@@ -74,4 +75,23 @@ test("move into own descendant is rejected (no cycle, node stays)", async () => 
   await assert.rejects(() => moveNode(p.slug, a.id, { parent: b.id }, author), /descendant/);
   // a is untouched and still reachable
   assert.equal((await getNode(p.slug, a.id)).parent, null);
+});
+
+test("progress: defaults to 'new' on create and can be cycled", async () => {
+  const p = await createProject({ title: "Prog" }, author);
+  const n = await createNode(p.slug, { pillar: "gameloop", title: "N" }, author);
+  assert.equal(n.progress, "new");
+  await updateNode(p.slug, n.id, { progress: "complete" }, author);
+  assert.equal((await getNode(p.slug, n.id)).progress, "complete");
+});
+
+test("migration: a pre-existing node file without `progress` reads as 'new'", async () => {
+  const p = await createProject({ title: "Mig" }, author);
+  // Simulate a node saved before the `progress` field existed (no `progress` in frontmatter).
+  const raw = "---\nid: OLDNODE1\ntitle: Old\npillar: gameloop\nstatus: core\nkind: idea\nparent: null\n---\n\nold body\n";
+  writeFileSync(nodePath(p.slug, "gameloop", "OLDNODE1"), raw);
+  assert.equal((await getNode(p.slug, "OLDNODE1")).progress, "new"); // defaulted on read
+  // and once the node is saved again, the field is persisted (still 'new')
+  await updateNode(p.slug, "OLDNODE1", { title: "Old edited" }, author);
+  assert.equal((await getNode(p.slug, "OLDNODE1")).progress, "new");
 });
