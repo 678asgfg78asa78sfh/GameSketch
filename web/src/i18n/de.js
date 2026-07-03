@@ -67,6 +67,9 @@ export default {
   attachments: {
     uploading: "lädt hoch…",
     dropHint: "📎 Dateien hierher ziehen — Skizzen, Refs, was auch immer",
+    noFiles: "Keine Datei im Drop — zieh eine echte Datei her, keinen Link von einer Webseite.",
+    tooBig: "„{name}“ ist zu groß — max. {max} MB.",
+    failed: "Upload fehlgeschlagen: {msg}",
   },
   history: {
     loading: "lädt…",
