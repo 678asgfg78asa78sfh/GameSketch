@@ -12,7 +12,13 @@ export default function CanvasPane({ slug, node, maximized }) {
   useEffect(() => {
     let ok = true;
     api.canvas(slug, node.id).then((d) => {
-      if (ok) setInitial({ elements: d.elements || [], appState: { viewBackgroundColor: "transparent" } });
+      // Restore the image blobs (files) too — without them, image elements render as gray
+      // boxes when the canvas remounts (e.g. after switching to another tab and back).
+      if (ok) setInitial({
+        elements: d.elements || [],
+        files: d.files || undefined,
+        appState: { viewBackgroundColor: d.appState?.viewBackgroundColor || "transparent" },
+      });
     });
     return () => { ok = false; };
   }, [node.id]);
@@ -22,10 +28,12 @@ export default function CanvasPane({ slug, node, maximized }) {
   return (
     <div style={{ height: maximized ? "calc(100vh - 230px)" : "68vh", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border)" }}>
       <Excalidraw theme="dark" initialData={initial}
-        onChange={(elements, appState) => {
+        onChange={(elements, appState, files) => {
           clearTimeout(saveTimer.current);
           saveTimer.current = setTimeout(() => {
-            api.saveCanvas(slug, node.id, { elements, appState: { viewBackgroundColor: appState.viewBackgroundColor } });
+            // Persist image blobs (files) alongside elements, else pasted/dropped images
+            // are lost on reload and come back as gray boxes.
+            api.saveCanvas(slug, node.id, { elements, files, appState: { viewBackgroundColor: appState.viewBackgroundColor } });
           }, 900);
         }} />
     </div>

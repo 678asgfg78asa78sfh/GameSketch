@@ -37,7 +37,7 @@ export default function NodeEditor({ slug, node, onChanged, maximized, onToggleM
   async function del() { if (confirm(t("editor.confirmDelete", { title: node.title }))) { await api.deleteNode(slug, node.id); onChanged(); } }
 
   return (
-    <div style={{ padding: maximized ? "28px 40px" : 28, maxWidth: maximized ? "100%" : 920, margin: "0 auto" }}>
+    <div style={{ padding: maximized ? "28px 40px" : 28, maxWidth: "100%", margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 16 }}>
         <StatusBadge status={node.status} onClick={cycleStatus} />
         <select className="field" style={{ width: "auto", padding: "7px 28px 7px 11px" }} value={node.kind} onChange={(e) => setKind(e.target.value)}>
