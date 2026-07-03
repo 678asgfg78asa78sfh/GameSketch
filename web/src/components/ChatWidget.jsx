@@ -34,6 +34,22 @@ export default function ChatWidget() {
   useEffect(() => { if (open && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight; }, [msgs, open, busy]);
   // re-read geometry when a saved layout is applied or reset
   useEffect(() => { setUi(loadUi()); }, [layoutTick]);
+  // Keep the widget reachable when the window shrinks: clamp its geometry back into the
+  // viewport. Without this, a widget parked near the right/bottom edge can slide entirely
+  // off-screen (behind the window border) on resize, with no way to grab it.
+  useEffect(() => {
+    const clampToViewport = () => setUi((u) => {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const w = Math.min(u.w, Math.max(300, vw - 16));
+      const h = Math.min(u.h, Math.max(320, vh - 16));
+      const x = Math.min(Math.max(0, u.x), Math.max(0, vw - 80));
+      const y = Math.min(Math.max(0, u.y), Math.max(0, vh - 40));
+      if (x === u.x && y === u.y && w === u.w && h === u.h) return u; // unchanged -> no re-render
+      return { ...u, x, y, w, h };
+    });
+    window.addEventListener("resize", clampToViewport);
+    return () => window.removeEventListener("resize", clampToViewport);
+  }, []);
 
   const onMove = useCallback((e) => {
     const d = drag.current; if (!d) return;
