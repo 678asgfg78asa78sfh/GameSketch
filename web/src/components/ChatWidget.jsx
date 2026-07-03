@@ -47,6 +47,7 @@ export default function ChatWidget() {
       if (x === u.x && y === u.y && w === u.w && h === u.h) return u; // unchanged -> no re-render
       return { ...u, x, y, w, h };
     });
+    clampToViewport(); // also fix geometry that was saved on a larger screen, before any resize
     window.addEventListener("resize", clampToViewport);
     return () => window.removeEventListener("resize", clampToViewport);
   }, []);

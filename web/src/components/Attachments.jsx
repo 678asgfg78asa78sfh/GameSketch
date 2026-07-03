@@ -23,13 +23,14 @@ export default function Attachments({ slug, node, onChanged }) {
     setBusy(true);
     try {
       for (const file of files) await api.uploadAttachment(slug, node.id, file);
-      onChanged();
     } catch (err) {
       // Always surface the failure. Previously an error here left the box stuck on "uploading…"
       // forever, because setBusy(false) sat after an unguarded await that never returned.
       setError(t("attachments.failed", { msg: err?.message || String(err) }));
     } finally {
       setBusy(false);
+      // Refresh even on partial failure, so any files that *did* upload show up right away.
+      onChanged();
     }
   }
 
