@@ -4,11 +4,13 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { api } from "../api.js";
 import { spring } from "../motion.js";
 import { useT } from "../i18n/index.jsx";
+import { PROGRESS_GLYPH, PROGRESS_COLOR, normalizeProgress } from "./ProgressBadge.jsx";
 
 export default function TreeNode({ node, depth, slug, pillarColor, selectedId, onSelect, onChanged }) {
   const { t } = useT();
   const [open, setOpen] = useState(true);
   const sel = node.id === selectedId;
+  const prog = normalizeProgress(node.progress);
   const { attributes, listeners, setNodeRef: dragRef, isDragging } = useDraggable({ id: node.id });
   const { setNodeRef: dropRef, isOver } = useDroppable({ id: node.id });
 
@@ -42,6 +44,7 @@ export default function TreeNode({ node, depth, slug, pillarColor, selectedId, o
         <span style={{ flex: 1, fontSize: 14, color: node.status === "future" ? "var(--text-dim)" : "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {node.title}
         </span>
+        <span title={t(`progress.${prog}`)} style={{ fontSize: 12, lineHeight: 1, color: PROGRESS_COLOR[prog], flexShrink: 0 }}>{PROGRESS_GLYPH[prog]}</span>
         {node.kind !== "idea" && <span className="mono" style={{ fontSize: 10 }}>{node.kind === "alternative" ? t("tree.kindAlt") : t("tree.kindNote")}</span>}
         <button className="btn btn-ghost btn-icon" style={{ padding: "2px 7px", fontSize: 14 }} onClick={(e) => { e.stopPropagation(); addChild(); }} title={t("tree.childIdea")}>＋</button>
       </div>

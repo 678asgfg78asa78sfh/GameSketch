@@ -69,6 +69,12 @@ export default {
     tooBig: "«{name}» слишком большой — максимум {max} МБ.",
     failed: "Ошибка загрузки: {msg}",
   },
+  progress: {
+    new: "Новый",
+    needs_work: "В работе",
+    complete: "Готово",
+    tooltip: "Статус работы — клик для смены (Новый → В работе → Готово)",
+  },
   history: {
     loading: "загрузка…",
     none: "Истории пока нет.",

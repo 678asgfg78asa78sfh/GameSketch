@@ -10,7 +10,9 @@ function nowIso() { return new Date().toISOString(); }
 
 function fileToNode(raw) {
   const { data, content } = matter(raw);
-  return { ...data, body: content.replace(/^\n/, "").replace(/\n$/, "") };
+  // `progress` (work status) was added later; default it here so pre-existing nodes migrate
+  // on read (and get persisted the next time the node is saved) — no bulk file rewrite needed.
+  return { progress: "new", ...data, body: content.replace(/^\n/, "").replace(/\n$/, "") };
 }
 
 function nodeToFile(n) {
@@ -46,7 +48,7 @@ export async function createNode(slug, input, author) {
   const n = {
     id, title: input.title || "Neue Idee",
     pillar: input.pillar, status: input.status || "core",
-    kind: input.kind || "idea", parent: input.parent ?? null,
+    kind: input.kind || "idea", progress: input.progress || "new", parent: input.parent ?? null,
     order: input.order ?? Date.now() % 100000,
     alternatives_to: input.alternatives_to ?? null,
     attachments: input.attachments || [], canvas: input.canvas ?? null,

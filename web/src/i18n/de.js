@@ -71,6 +71,12 @@ export default {
     tooBig: "„{name}“ ist zu groß — max. {max} MB.",
     failed: "Upload fehlgeschlagen: {msg}",
   },
+  progress: {
+    new: "Neu",
+    needs_work: "In Arbeit",
+    complete: "Fertig",
+    tooltip: "Bearbeitungsstand — klicken zum Wechseln (Neu → In Arbeit → Fertig)",
+  },
   history: {
     loading: "lädt…",
     none: "Noch keine Historie.",
