@@ -46,7 +46,7 @@ export default function App() {
   return (
     <>
       {route.name === "project" ? (
-        <Project slug={route.slug} me={me} onBack={goProjects} />
+        <Project key={route.slug} slug={route.slug} me={me} onBack={goProjects} />
       ) : (
         <Projects
           me={me}
@@ -56,7 +56,7 @@ export default function App() {
       )}
       <SettingsGear slug={currentSlug} />
       {currentSlug && <ProjectConfigGear slug={currentSlug} />}
-      <ChatWidget />
+      <ChatWidget userName={me.name} />
     </>
   );
 }

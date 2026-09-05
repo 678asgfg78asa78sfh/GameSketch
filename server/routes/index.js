@@ -9,6 +9,7 @@ import chatRoutes from "./chat.routes.js";
 import pairRoutes from "./pair.routes.js";
 import categoryRoutes from "./categories.routes.js";
 import templateRoutes from "./templates.routes.js";
+import workspaceRoutes from "./workspace.routes.js";
 
 export async function registerRoutes(app) {
   await app.register(authRoutes);
@@ -22,4 +23,5 @@ export async function registerRoutes(app) {
   await app.register(pairRoutes);
   await app.register(categoryRoutes);
   await app.register(templateRoutes);
+  await app.register(workspaceRoutes);
 }

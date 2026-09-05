@@ -14,7 +14,7 @@
 
 ## What it is
 
-GameSketch is a small local web app for turning a game idea into a structured, living **Game Design Document** — instead of one sprawling text file. Every idea is a node in a tree, organised along 5 pillars. Nodes are plain **Markdown files versioned with Git**, so nothing is ever lost, you can see who changed what, and an AI can read the whole design straight off disk or through a small read-API.
+GameSketch is a local web app for turning a game idea into a structured, living **Game Design Document**. Every idea is a node in a tree, organised along customisable categories. Nodes are plain **Markdown files versioned with Git**. You can review changes, restore deleted ideas, export a readable document and back up complete projects.
 
 It runs as **one Node process on your own machine**. No CDNs, no telemetry, no accounts in the cloud.
 
@@ -30,14 +30,19 @@ Every project starts with these (you can rename / recolour / add / remove them p
 
 ## Highlights
 
-- 🌳 **5-pillar idea tree** — add / nest / reorder, status `core·side·future`, alternatives & notes, outliner keys (Enter = sibling, Tab = child)
+- 🌳 **Idea tree** — add / nest / reorder / duplicate subtrees, status `core·side·future`, alternatives & notes; remembered collapse state; Enter = sibling, Ctrl/Cmd+Enter = child when a tree row is focused
 - ✍️ **Markdown editor** with live preview and autosave
 - 🎨 **Doodle canvas** per node (Excalidraw, fully offline)
-- 📎 **Drag & drop attachments** — sketches, refs, anything
+- 📎 **Attachments** — file picker or drag & drop, image thumbnails, remove a reference with undo
 - 🕓 **Git history + one-click restore**, with an author on every change
 - 🤖 **AI** — a read-API for external agents *and* an in-app copilot, pointed at a local endpoint, OpenRouter, or the local `claude` CLI
 - 🌍 **English / Deutsch / Русский**
 - 🔒 **No phone-home** — local fonts, no CDNs, no telemetry
+- 🔎 **Search and links** — title/body search, progress and priority filters, `[[id]]` links with completion and backlinks
+- ↩ **Trash and undo** — recover complete subtrees; undo structural and Copilot actions without overwriting newer work
+- 📖 **Full document** — contents, drawings and attachments; standalone HTML with embedded local media, print/PDF, Markdown and JSON exports
+- 🧩 **Starting points** — filled mechanic, enemy and playtest templates, plus a linked example project
+- 📁 **Project management** — rename, archive, duplicate, download/import a complete project backup
 
 ## Requirements
 
@@ -77,9 +82,18 @@ data/
     nodes/<category>/*.md  # each node = Markdown + frontmatter
     canvases/*.excalidraw  # doodles (JSON)
     assets/                # uploaded files
+    trash/*.json           # deleted subtrees, including metadata and text
+    actions/*.json         # undo records
+  proposals/<slug>/*.json   # pending Copilot proposals
 ```
 
-**Backup = copy `data/`.** Restoring an earlier version of a node is built into the UI (node → **History** tab → Restore).
+Use **Download backup** in the project header to save a `.gamesketch` file. **Open backup** on the projects page imports it as a **new project**, leaving the source untouched. The file includes text, attachments, drawings, trash, undo records and the project's Git history. It does not include user accounts, provider keys or browser conversations. The current file format supports 100 MiB compressed / 200 MiB unpacked, including history.
+
+For a whole installation or larger projects, stop the server and copy `data/` (keep that copy private: `config.json` contains credentials). Browser conversations and unsaved text drafts live in local browser storage, scoped by user and project; they are not part of a project backup.
+
+Deleting an idea moves it and its descendants to **Trash**. **Actions** lists the latest 50 structural/Copilot actions with undo; undo refuses when newer edits or dependencies would be lost. Restoring an earlier text version is available under node → **History** → Restore.
+Restore brings back the title, text, idea type and statuses, including revisions from before a category move.
+The current tree placement, attachments and canvas stay attached to the node.
 
 ## AI
 
@@ -89,7 +103,18 @@ Open the **gear → AI** and pick a provider (no `config.json` editing needed):
 - **OpenRouter / API key** — `baseUrl` + `apiKey` + `model`; a **Load models** button pulls the list.
 - **Claude CLI** — calls your local `claude` binary, no API key.
 
-Then the node **Assist** tab offers *Find gaps*, *Summarise*, *Suggest alternative* — each sends the relevant subtree to the provider **you** chose. There's also a project-wide **copilot** (the ✦ button).
+The node **Assist** tab offers *Find gaps*, *Summarise* and *Suggest alternative*. The **copilot** (✦) keeps a separate conversation for each project and user. Both interactive editing flows show a before/after preview. Changes are applied together after approval and can be undone as one action. Repeating an apply request does not duplicate ideas. Proposals made against older content must be regenerated.
+
+Copilot context is a project overview with excerpts, currently capped at 12,000 characters: the open idea is prioritised; other bodies are shortened to 400 characters. The chat displays how many ideas were included. It does not inspect drawing pixels or attachment contents.
+
+## Everyday shortcuts and exports
+
+- **Ctrl/Cmd+K** focuses project search. Enter opens the first result; Escape clears filters.
+- **Ctrl/Cmd+S** flushes pending text and drawing saves. Normal editing saves automatically.
+- Type **`[[`** in the text editor and select an idea by title. `[[id|custom label]]` is also supported. Renaming an idea updates the default link label; the destination remains stable.
+- Tree rows support left/right to collapse/expand. Move up/down and **Move** in the editor provide a keyboard-accessible alternative to dragging.
+- **Full document → HTML with images** produces a standalone document with local attachments and drawings embedded. External Markdown image URLs remain external. **Print / PDF** prints the same complete document. Markdown and JSON are text/data exports; use the backup for restoration.
+- Failed saves keep a local text draft. Reloading offers to recover it; switching away waits for pending saves to succeed.
 
 ## AI read-API (for external agents)
 
@@ -113,8 +138,17 @@ No CDNs, no Google Fonts (fonts are bundled locally via fontsource), no telemetr
 ## Tests
 
 ```bash
-npm test     # backend suite: storage, auth, API, AI export
+npm test     # storage, auth, API, AI export and autosave regression tests
+npx playwright install chromium   # once, for the browser tests
+npm run test:e2e                  # production build + browser regression tests
 ```
+
+Browser tests start their own server on `127.0.0.1:4339` with a new temporary data directory.
+They use a deterministic local AI provider and never call paid/cloud models or use your `data/`. To use an installed Microsoft Edge on Windows instead of downloading
+Chromium, set `$env:GS_BROWSER_CHANNEL = "msedge"` in PowerShell before running `npm run test:e2e`.
+
+The `overrides` in `package.json` update pinned Nano ID / lodash-es dependencies used by the canvas
+and its diagram parser. Keep them until upstream dependencies include the patched releases.
 
 ## Tech
 

@@ -3,6 +3,7 @@ import { getProject } from "../storage/projects.js";
 import { createNode, updateNode } from "../storage/nodes.js";
 import { readCategories, DEFAULT_CATEGORIES } from "../storage/categories.js";
 import { converse } from "./providers.js";
+import { prepareProposal } from "./proposals.js";
 
 const STATUS = ["core", "side", "future"];
 const KIND = ["idea", "alternative", "note"];
@@ -54,7 +55,8 @@ function systemPrompt(L, context, nodeId, catSlugs) {
     "You are GameSketch Copilot, an assistant embedded in a local game-design tool.",
     "The user designs games as a tree of idea-nodes grouped into these categories",
     `(use ONLY these as \"pillar\"): ${cats.join(", ")}.`,
-    "You can DIRECTLY change the design by emitting actions — don't just describe changes, make them.",
+    "Propose concrete design changes by emitting actions. The user reviews and applies them separately.",
+    "The context may contain excerpts; do not claim to have reviewed omitted content or say changes are already saved.",
     "",
     "Respond with a SINGLE JSON object and NOTHING else, in exactly this shape:",
     '{"reply": "<short message to the user>", "actions": [ <zero or more actions> ]}',
@@ -166,7 +168,7 @@ export async function findGaps(slug, { nodeId, lang }) {
 }
 
 // Interactive assist step 2: propose concrete actions for the selected gaps — NOT applied.
-export async function propose(slug, { nodeId, items, note, lang }) {
+export async function propose(slug, { nodeId, items, note, lang }, author) {
   const project = await getProject(slug);
   if (!project) throw new Error("project not found");
   const L = LANG_NAME[lang] || LANG_NAME.en;
@@ -179,10 +181,11 @@ export async function propose(slug, { nodeId, items, note, lang }) {
   ].join("\n");
   const system = systemPrompt(L, context, nodeId, project.categories?.map((c) => c.slug));
   const { text } = await converse(loadConfig(), { system, messages: [{ role: "user", content: userMsg }] });
-  return parseReply(text); // { reply, actions } — caller applies only after approval
+  const parsed = parseReply(text);
+  return { ...parsed, proposal: author ? prepareProposal(project, parsed.actions, author) : null };
 }
 
-// One copilot turn: context -> model -> parse -> apply. Returns reply + applied actions.
+// One copilot turn proposes changes. Applying is a separate, idempotent operation.
 export async function chatTurn(slug, { messages, nodeId, lang }, author) {
   const project = slug ? await getProject(slug) : null;
   const L = LANG_NAME[lang] || LANG_NAME.en;
@@ -190,6 +193,9 @@ export async function chatTurn(slug, { messages, nodeId, lang }, author) {
   const system = systemPrompt(L, context, project ? nodeId : null, project?.categories?.map((c) => c.slug));
   const { text } = await converse(loadConfig(), { system, messages });
   const { reply, actions } = parseReply(text);
-  const applied = project && actions.length ? await applyActions(slug, actions, author) : [];
-  return { text: reply || text, applied, changed: applied.some((s) => s.type !== "error") };
+  const proposal = project && actions.length ? prepareProposal(project, actions, author) : null;
+  return { text: reply || text, proposal, applied: [], changed: false,
+    context: project ? { total: project.nodes.length,
+      included: project.nodes.filter((n) => context.includes(`id=${n.id}`)).length,
+      excerpts: context.includes("…(truncated)") || project.nodes.some((n) => n.id !== nodeId && (n.body || "").length > 400) } : null };
 }

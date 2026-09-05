@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../api.js";
 import { useT } from "../i18n/index.jsx";
+import ProposalCard from "./ProposalCard.jsx";
 
 export default function AssistPanel({ slug, node, onChanged }) {
   const { t, lang } = useT();
@@ -10,9 +11,9 @@ export default function AssistPanel({ slug, node, onChanged }) {
   const [gaps, setGaps] = useState(null);      // [{id, text, checked}]
   const [note, setNote] = useState("");
   const [proposal, setProposal] = useState(null); // { reply, actions }
-  const [done, setDone] = useState("");
+  const [applied, setApplied] = useState({});
 
-  function reset() { setOut(""); setGaps(null); setProposal(null); setNote(""); setErr(""); setDone(""); }
+  function reset() { setOut(""); setGaps(null); setProposal(null); setNote(""); setErr(""); setApplied({}); }
 
   async function runText(action) {
     reset(); setBusy(action);
@@ -38,20 +39,6 @@ export default function AssistPanel({ slug, node, onChanged }) {
     catch (e) { setErr(String(e.message || e)); } finally { setBusy(""); }
   }
 
-  async function approve() {
-    setBusy("apply"); setErr("");
-    try {
-      const r = await api.assistApply(slug, proposal.actions);
-      const n = (r.applied || []).filter((a) => a.type !== "error").length;
-      reset(); setDone(t("assist.applied", { n }));
-      onChanged && onChanged();
-    } catch (e) { setErr(String(e.message || e)); } finally { setBusy(""); }
-  }
-
-  const actionLabel = (a) =>
-    a.type === "create_node" ? `＋ ${a.title || "node"}${a.pillar ? ` · ${t(`pillars.${a.pillar}`)}` : ""}`
-      : `✎ ${a.title || a.id || "node"}`;
-
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
@@ -70,7 +57,6 @@ export default function AssistPanel({ slug, node, onChanged }) {
       {err && (
         <div style={{ color: "var(--gameloop)", fontSize: 13.5, padding: 12, background: "rgba(255,107,94,0.08)", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,107,94,0.25)" }}>{err}</div>
       )}
-      {done && <div style={{ color: "var(--content)", fontSize: 13.5 }}>{done}</div>}
       {out && (
         <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-body)", fontSize: 14, background: "var(--surface-2)", padding: 16, borderRadius: "var(--radius-md)", border: "1px solid var(--border)", lineHeight: 1.65 }}>{out}</pre>
       )}
@@ -108,19 +94,8 @@ export default function AssistPanel({ slug, node, onChanged }) {
         <div style={{ display: "grid", gap: 12, background: "var(--surface-2)", border: "1px solid var(--border-strong)", borderRadius: "var(--radius-md)", padding: 16 }}>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 700 }}>{t("assist.proposalTitle")}</div>
           {proposal.reply && <div style={{ fontSize: 13.5, color: "var(--text-dim)", lineHeight: 1.55 }}>{proposal.reply}</div>}
-          {proposal.actions?.length > 0 ? (
-            <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 4 }}>
-              {proposal.actions.map((a, i) => <li key={i} style={{ fontSize: 13.5 }}>{actionLabel(a)}</li>)}
-            </ul>
-          ) : (
-            <div style={{ color: "var(--text-faint)", fontSize: 13 }}>{t("assist.noActions")}</div>
-          )}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn btn-primary" disabled={busy === "apply" || !proposal.actions?.length} onClick={approve}>
-              {busy === "apply" ? t("assist.thinking") : t("assist.approve")}
-            </button>
-            <button className="btn btn-ghost" disabled={!!busy} onClick={reset}>{t("assist.discard")}</button>
-          </div>
+          {proposal.proposal ? <ProposalCard proposal={proposal.proposal} {...applied} onUpdate={(patch) => setApplied((a) => ({ ...a, ...patch }))} onChanged={onChanged} /> : <div>{t("assist.noActions")}</div>}
+          <button className="btn btn-ghost" onClick={reset}>{t("qol.close")}</button>
         </div>
       )}
     </div>

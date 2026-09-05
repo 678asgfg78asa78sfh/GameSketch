@@ -13,6 +13,11 @@ Thumbs.db
 
 # Test scratch output
 test-out.txt
+test-unit-out.txt
+build-out.txt
+test-results/
+playwright-report/
+/web/public/excalidraw/
 _*.mjs
 
 # Shareable build artifact (regenerate with build-share-zip.bat)

@@ -1,5 +1,6 @@
 export default {
   common: {
+    retry: "Erneut versuchen",
     loading: "lädt …",
     logout: "Logout",
     save: "Speichern",
@@ -48,6 +49,7 @@ export default {
     kindNote: "Notiz",
   },
   editor: {
+    saveFailed: "Speichern fehlgeschlagen",
     saved: "✓ gespeichert",
     saving: "… speichert",
     delete: "🗑 Löschen",
@@ -160,9 +162,9 @@ export default {
     send: "Senden",
     thinking: "… arbeitet",
     clear: "Leeren",
-    empty: "Hi! Ich sehe dein Design und ändere es direkt — z. B. „schreib ein Gameloop für ein Pixelart-Roguelike mit Permadeath“.",
+    empty: "Ich helfe dir beim Ausarbeiten deines Designs — z. B. „entwirf einen Gameloop für ein Pixelart-Roguelike“. Vorschläge kannst du prüfen, übernehmen oder verwerfen.",
     sees: "sieht: {what}",
-    wholeProject: "ganzes Projekt",
+    wholeProject: "Projektüberblick (Auszüge)",
     noProject: "öffne ein Projekt, damit ich es sehen & bearbeiten kann",
     applied: "✏ {n} Änderung(en) angewendet",
   },

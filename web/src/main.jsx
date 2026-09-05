@@ -5,6 +5,7 @@ import "@fontsource-variable/hanken-grotesk";
 import "@fontsource-variable/jetbrains-mono";
 import "./styles/tokens.css";
 import "./styles/global.css";
+import "./styles/workspace.css";
 import App from "./App.jsx";
 import { I18nProvider } from "./i18n/index.jsx";
 import { WorkProvider } from "./workContext.jsx";

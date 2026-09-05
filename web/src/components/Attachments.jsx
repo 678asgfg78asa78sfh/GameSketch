@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "../api.js";
 import { useT } from "../i18n/index.jsx";
+import { errorText } from "../ui.js";
+import { isImage } from "../documentExport.js";
+import { flushAll } from "../useAutosave.js";
 
 const MAX_BYTES = 25 * 1024 * 1024; // keep in sync with the server multipart fileSize limit
 
@@ -9,12 +12,18 @@ export default function Attachments({ slug, node, onChanged }) {
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const fileInput = useRef(null);
 
   async function onDrop(e) {
     e.preventDefault();
     setOver(false);
     setError("");
     const files = [...(e.dataTransfer?.files || [])];
+    return upload(files);
+  }
+  async function upload(files) {
+    if (busy) return;
+    setError("");
     // Dragging a link/image straight from a web page yields no File — say so instead of hanging.
     if (files.length === 0) { setError(t("attachments.noFiles")); return; }
     const tooBig = files.find((f) => f.size > MAX_BYTES);
@@ -22,6 +31,7 @@ export default function Attachments({ slug, node, onChanged }) {
 
     setBusy(true);
     try {
+      await flushAll();
       for (const file of files) await api.uploadAttachment(slug, node.id, file);
     } catch (err) {
       // Always surface the failure. Previously an error here left the box stuck on "uploading…"
@@ -30,8 +40,17 @@ export default function Attachments({ slug, node, onChanged }) {
     } finally {
       setBusy(false);
       // Refresh even on partial failure, so any files that *did* upload show up right away.
-      onChanged();
+      await onChanged();
     }
+  }
+  async function remove(path) {
+    if (busy || !confirm(t("qol.removeConfirm"))) return;
+    setBusy(true); setError("");
+    try {
+      await flushAll();
+      const r = await api.removeAttachment(slug, node.id, path);
+      await onChanged(r.action);
+    } catch (e) { setError(errorText(e, t)); } finally { setBusy(false); }
   }
 
   const has = (node.attachments || []).length > 0;
@@ -46,11 +65,12 @@ export default function Attachments({ slug, node, onChanged }) {
       <div style={{ color: error ? "var(--gameloop)" : "var(--text-dim)", fontSize: 12.5, marginBottom: has ? 12 : 0 }}>
         {busy ? t("attachments.uploading") : (error || t("attachments.dropHint"))}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
+      <button className="btn" type="button" disabled={busy} style={{ marginTop: 10 }} onClick={() => fileInput.current.click()}>{t("qol.chooseFiles")}</button><input ref={fileInput} hidden type="file" multiple disabled={busy} onChange={(e) => { const files = [...e.target.files]; e.target.value = ""; if (files.length) upload(files); }} />
+      <div className="attachment-grid">
         {(node.attachments || []).map((a) => (
-          <a key={a} className="chip" href={`/api/projects/${slug}/${a}`} target="_blank" rel="noreferrer">
-            📄 {a.split("/").pop()}
-          </a>
+          <div key={a} className="attachment-card"><a href={`/api/projects/${slug}/${a}`} target="_blank" rel="noreferrer">
+            {isImage(a) && <img src={`/api/projects/${slug}/${a}`} alt={a.split("/").pop()} loading="lazy" />}{a.split("/").pop()}
+          </a><button className="btn btn-ghost" disabled={busy} aria-label={`${t("qol.removeAttachment")}: ${a.split("/").pop()}`} onClick={() => remove(a)}>✕</button></div>
         ))}
       </div>
     </div>

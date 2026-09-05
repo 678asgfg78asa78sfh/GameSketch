@@ -1,0 +1,47 @@
+.toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.toolbar .field { width:auto; min-width:0; }
+.toolbar a { text-decoration:none; }
+.muted { color:var(--text-dim); }
+.error { color:var(--gameloop); padding:10px 0; overflow-wrap:anywhere; }
+.gs-dialog { color:var(--text); background:var(--ink); border:1px solid var(--border-strong); border-radius:16px; padding:24px; width:min(680px,94vw); max-height:90vh; box-shadow:var(--shadow); }
+.gs-dialog::backdrop { background:#0009; backdrop-filter:blur(4px); }
+.gs-dialog header { margin-bottom:20px; }
+.gs-dialog form { display:grid; gap:14px; }
+.gs-dialog label { display:grid; gap:6px; }
+.gs-dialog h2 { font-size:21px; }
+.search-controls { display:grid; gap:8px; margin-bottom:18px; }
+.search-controls .toolbar { flex-wrap:nowrap; }
+.search-controls select.field { width:50%; font-size:12px; padding:8px; }
+.search-result { display:block; text-align:left; width:100%; line-height:1.5; margin-bottom:6px; }
+.search-result small { display:block; font-weight:400; white-space:normal; color:var(--text-dim); overflow-wrap:anywhere; }
+.notice { background:var(--surface-2); border:1px solid var(--border-strong); border-radius:10px; padding:8px 14px; }
+.workspace-pane { padding:28px; max-width:1100px; margin:0 auto; }
+.workspace-pane > h2 { margin-bottom:12px; }
+.action-card { border:1px solid var(--border); border-radius:12px; padding:16px; margin:12px 0; }
+.change-list details { border:1px solid var(--border); border-radius:8px; padding:10px; margin:8px 0; }
+summary { cursor:pointer; }
+.change-field { margin-top:12px; }
+.change-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:4px; }
+.chat-widget .change-pair { grid-template-columns:1fr; }
+.change-pair pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:280px; overflow:auto; margin:4px 0; font:13px/1.5 var(--font-body); background:var(--surface-2); padding:8px; }
+.node-link { color:var(--spark); text-underline-offset:3px; }
+.missing-link { color:var(--gameloop); text-decoration:underline dotted; }
+.breadcrumbs { margin-bottom:14px; font-size:12px; }
+.breadcrumbs button { padding:3px 6px; font-size:12px; }
+.link-suggestions { padding:6px; background:var(--surface-3); border:1px solid var(--border-strong); border-radius:8px; max-height:220px; overflow:auto; }
+.link-suggestions button { display:block; width:100%; text-align:left; }
+.attachment-grid { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+.attachment-card { max-width:190px; overflow-wrap:anywhere; font-size:12px; }
+.attachment-card img { display:block; width:180px; max-width:100%; height:110px; object-fit:contain; background:var(--surface-2); border-radius:8px; }
+.reader-node { margin-top:32px; padding-top:22px; border-top:1px solid var(--border); scroll-margin-top:20px; }
+.reader-node h3 { font-size:23px; }
+.reader-node svg { max-width:100%; height:auto; max-height:650px; }
+.reader-toc { columns:2; padding-left:20px; }
+.reader-toc a { color:var(--text-dim); }
+.project-card { overflow:hidden; }
+.project-card > button { width:100%; text-align:left; padding:22px; background:none; border:0; color:var(--text); cursor:pointer; }
+.project-card .toolbar { padding:0 14px 14px; }
+.project-card .toolbar button { font-size:12px; padding:8px; }
+:focus-visible { outline:2px solid var(--spark); outline-offset:3px; }
+@media(max-width:800px) { .project-grid { grid-template-columns:1fr!important; overflow:auto; } .project-grid > aside { max-height:36vh; } .project-splitter { display:none!important; } .project-grid > main { min-height:60vh; overflow:visible!important; } .project-header { gap:8px!important; padding:10px!important; } .workspace-pane { padding:16px; } .change-pair { grid-template-columns:1fr; } .reader-toc { columns:1; } }
+@media print { html,body,#root { height:auto!important; overflow:visible!important; background:white!important; color:black!important; } .project-header,.project-grid > aside,.project-splitter,.no-print,.notice,body:has(.document-reader) #root > button,body:has(.document-reader) #root > div:not(.project-shell) { display:none!important; } .project-shell,.project-grid { display:block!important; height:auto!important; padding:0!important; } .project-grid > main,.glass { overflow:visible!important; background:white!important; color:black!important; border:0!important; box-shadow:none!important; backdrop-filter:none!important; } .reader-node { break-inside:auto; } .reader-node figure { break-inside:avoid; } .md,.md *,.muted { color:inherit!important; } }

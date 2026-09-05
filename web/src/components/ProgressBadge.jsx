@@ -14,11 +14,11 @@ export default function ProgressBadge({ progress = "new", onClick }) {
   const { t } = useT();
   const p = normalizeProgress(progress);
   return (
-    <span className="pill" onClick={onClick} title={t("progress.tooltip")}
+    <button type="button" className="pill" onClick={onClick} disabled={!onClick} title={t("progress.tooltip")}
       style={{ background: "var(--surface-2)", color: PROGRESS_COLOR[p], border: "1px solid var(--border)",
         cursor: onClick ? "pointer" : "default" }}>
       <span style={{ fontSize: 11, lineHeight: 1 }}>{PROGRESS_GLYPH[p]}</span>
       {t(`progress.${p}`)}
-    </span>
+    </button>
   );
 }

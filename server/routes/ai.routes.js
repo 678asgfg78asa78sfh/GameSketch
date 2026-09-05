@@ -3,7 +3,8 @@ import { requireReadAccess } from "../pairing.js";
 import { getProject } from "../storage/projects.js";
 import { flattenToMarkdown, subtreeToMarkdown, subtreeNodes, buildTree } from "../storage/tree.js";
 import { assist } from "../ai/assist.js";
-import { findGaps, propose, applyActions } from "../ai/agent.js";
+import { findGaps, propose } from "../ai/agent.js";
+import { prepareProposal, applyProposal } from "../ai/proposals.js";
 
 const guard = { preHandler: requireAuth };       // session only (UI assist)
 const readGuard = { preHandler: requireReadAccess }; // session cookie OR agent pairing token
@@ -48,12 +49,17 @@ export default async function aiRoutes(app) {
     try {
       return await propose(req.params.slug, {
         nodeId: req.body?.nodeId, items: req.body?.items, note: req.body?.note, lang: req.body?.lang,
-      });
+      }, req.user);
     } catch (e) { return reply.code(400).send({ error: String(e.message || e) }); }
   });
 
   app.post("/api/projects/:slug/assist/apply", guard, async (req, reply) => {
-    try { return { applied: await applyActions(req.params.slug, req.body?.actions || [], req.user) }; }
+    try {
+      const project = await getProject(req.params.slug);
+      if (!project) return reply.code(404).send({ error: "PROJECT_NOT_FOUND" });
+      const proposal = prepareProposal(project, req.body?.actions || [], req.user);
+      return proposal ? await applyProposal(req.params.slug, proposal.id, req.user) : { applied: [], action: null };
+    }
     catch (e) { return reply.code(400).send({ error: String(e.message || e) }); }
   });
 }

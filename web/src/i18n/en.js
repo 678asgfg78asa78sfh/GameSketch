@@ -1,5 +1,6 @@
 export default {
   common: {
+    retry: "Retry",
     loading: "Loading …",
     logout: "Log out",
     save: "Save",
@@ -48,6 +49,7 @@ export default {
     kindNote: "note",
   },
   editor: {
+    saveFailed: "Save failed",
     saved: "✓ saved",
     saving: "… saving",
     delete: "🗑 Delete",
@@ -160,9 +162,9 @@ export default {
     send: "Send",
     thinking: "… working",
     clear: "Clear",
-    empty: "Hi! I can see your design and change it directly — e.g. “write a gameloop for a pixel-art roguelike, with permadeath”.",
+    empty: "I can help develop your design — for example, “draft a game loop for a pixel-art roguelike”. Review proposals before applying or discarding them.",
     sees: "sees: {what}",
-    wholeProject: "whole project",
+    wholeProject: "project overview (excerpts)",
     noProject: "open a project so I can see & edit it",
     applied: "✏ {n} change(s) applied",
   },

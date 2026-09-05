@@ -2,8 +2,9 @@ import { createContext, useContext, useState, useCallback, useMemo } from "react
 import en from "./en.js";
 import de from "./de.js";
 import ru from "./ru.js";
+import qol from "./qol.js";
 
-const DICTS = { en, de, ru };
+const DICTS = { en: { ...en, qol: qol.en }, de: { ...de, qol: qol.de }, ru: { ...ru, qol: qol.ru } };
 
 // [code, native label] — order shown in pickers.
 export const LANGS = [

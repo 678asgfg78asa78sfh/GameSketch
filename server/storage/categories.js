@@ -2,6 +2,8 @@ import matter from "gray-matter";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { projectMeta, projectDir } from "./paths.js";
 import { commitAll } from "./git.js";
+import { projectWrite } from "./lock.js";
+import { listNodes } from "./nodes.js";
 
 // The 5 built-in pillars are just the DEFAULT template now — projects can add/rename/recolor/remove.
 export const DEFAULT_CATEGORIES = [
@@ -45,7 +47,7 @@ export function readCategories(slug) {
 }
 
 // Validate + persist a new category list into project.md. Returns the normalized list.
-export function writeCategories(slug, categories, author) {
+export const writeCategories = projectWrite(async (slug, categories, author) => {
   const raw = matter(readFileSync(projectMeta(slug), "utf8"));
   const next = (Array.isArray(categories) ? categories : []).map(normalize).filter(Boolean);
   if (!next.length) throw new Error("at least one category is required");
@@ -54,9 +56,12 @@ export function writeCategories(slug, categories, author) {
     if (seen.has(c.slug)) throw new Error(`duplicate category: ${c.slug}`);
     seen.add(c.slug);
   }
+  const used = new Set((await listNodes(slug)).map((n) => n.pillar));
+  const removedWithNodes = [...used].filter((s) => !seen.has(s));
+  if (removedWithNodes.length) throw new Error(`category not empty: ${removedWithNodes.join(", ")}`);
   const data = { ...raw.data, categories: next };
   delete data.pillars; // superseded by categories
   writeFileSync(projectMeta(slug), matter.stringify(raw.content, data));
-  if (author) commitAll(projectDir(slug), { ...author, message: "project: edit categories" });
+  if (author) await commitAll(projectDir(slug), { ...author, message: "project: edit categories" });
   return next;
-}
+});

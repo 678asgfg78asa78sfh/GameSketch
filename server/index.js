@@ -26,11 +26,11 @@ export async function buildServer() {
     await app.register(fastifyStatic, {
       root: dist,
       cacheControl: false, // we set Cache-Control ourselves below (else static overrides it)
-      setHeaders(res, p) {
+      setHeaders(reply, p) {
         // Hashed assets are immutable -> cache hard. index.html must never be cached,
         // otherwise reloads keep serving an old bundle after an update.
-        if (/[\\/]assets[\\/]/.test(p)) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-        else res.setHeader("Cache-Control", "no-cache");
+        if (/[\\/]assets[\\/]/.test(p)) reply.header("Cache-Control", "public, max-age=31536000, immutable");
+        else reply.header("Cache-Control", "no-cache");
       },
     });
     app.setNotFoundHandler((req, reply) => {

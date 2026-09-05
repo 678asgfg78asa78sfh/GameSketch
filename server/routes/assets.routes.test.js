@@ -55,3 +55,23 @@ test("upload attachment: 200, returns path, records it on the node", async () =>
   assert.ok((n.attachments || []).includes(out.path), "attachment path recorded on node");
   await app.close();
 });
+
+test("concurrent uploads retain every attachment and duplicate uploads appear once", async (t) => {
+  const app = await buildServer();
+  t.after(() => app.close());
+  const cookies = { gs_session: await authed(app) };
+  const proj = (await app.inject({ method: "POST", url: "/api/projects", cookies, payload: { title: "Concurrent uploads" } })).json();
+  const base = `/api/projects/${proj.slug}`;
+  const node = (await app.inject({ method: "POST", url: `${base}/nodes`, cookies,
+    payload: { pillar: "gameloop", title: "Attachments" } })).json();
+  const upload = (filename) => {
+    const { body, contentType } = multipart([{ name: "file", filename, contentType: "text/plain", data: filename }]);
+    return app.inject({ method: "POST", url: `${base}/nodes/${node.id}/attachments`, cookies,
+      headers: { "content-type": contentType }, payload: body });
+  };
+  const responses = await Promise.all([upload("first.txt"), upload("second.txt"), upload("first.txt")]);
+  responses.forEach((r) => assert.equal(r.statusCode, 200, r.payload));
+  const saved = (await app.inject({ method: "GET", url: base, cookies })).json().nodes[0];
+  assert.deepEqual(new Set(saved.attachments), new Set(responses.map((r) => r.json().path)));
+  assert.equal(saved.attachments.length, 2);
+});

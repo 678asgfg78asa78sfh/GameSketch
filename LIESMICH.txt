@@ -31,7 +31,23 @@ Erster Start in der App
 Deine Daten
 -----------
 Alles liegt im Unterordner  data\  (wird beim ersten Start erzeugt).
-Backup = einfach den  data\  Ordner kopieren.
+Im Projekt: "Backup herunterladen" speichert Texte, Anhänge, Skizzen,
+Papierkorb und Versionsverlauf als .gamesketch-Datei.
+"Backup öffnen" auf der Projektübersicht legt daraus ein neues Projekt an.
+Für eine komplette Installation: Server beenden und data\ kopieren.
+Gespräche und lokale Textentwürfe liegen zusätzlich im jeweiligen Browser.
+
+
+Im Alltag
+---------
+  - Strg+K: Ideen nach Titel und Inhalt suchen, nach Fortschritt filtern.
+  - [[ im Text: andere Ideen verknüpfen; Rückverweise stehen unter dem Editor.
+  - Papierkorb: gelöschte Ideen samt Unterideen wiederherstellen.
+  - Aktionen: Verschieben, Kopieren und KI-Änderungen rückgängig machen.
+  - Gesamtdokument: lesen, HTML mit Bildern exportieren, drucken / PDF.
+  - Idee aus Vorlage: ausgefüllte Mechanik-, Gegner- und Playtest-Vorlagen.
+  - Projekte umbenennen, archivieren, duplizieren oder ein Beispiel öffnen.
+  - Strg+S speichert sofort; ansonsten läuft Autosave im Hintergrund.
 
 
 KI-Funktion (optional)
@@ -40,6 +56,9 @@ Im Zahnrad → KI wählst du einen Anbieter:
   - Claude CLI (claude -p), lokal installiert, kein API-Key, ODER
   - API-Key (OpenRouter & OpenAI-kompatibel) mit "Modelle laden".
 Ohne KI funktioniert alles andere ganz normal.
+Der Copilot führt ein eigenes Gespräch pro Projekt. Änderungen werden als
+Vorher-nachher-Vorschlag angezeigt und erst mit "Änderungen übernehmen"
+gespeichert. Eine Antwort lässt sich gemeinsam rückgängig machen.
 
 
 Falls START.bat mal nicht will (manuell)

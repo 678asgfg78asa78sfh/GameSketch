@@ -1,7 +1,10 @@
 import { requireAuth } from "../auth.js";
 import { chatTurn } from "../ai/agent.js";
+import { applyProposal } from "../ai/proposals.js";
 
 export default async function chatRoutes(app) {
+  app.post("/api/projects/:slug/proposals/:id/apply", { preHandler: requireAuth }, async (req) =>
+    applyProposal(req.params.slug, req.params.id, req.user));
   // Global copilot chat. Session-authenticated (it runs in the logged-in browser).
   app.post("/api/chat", { preHandler: requireAuth }, async (req, reply) => {
     const { messages, slug, nodeId, lang } = req.body || {};

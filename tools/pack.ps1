@@ -12,13 +12,16 @@ $base  = Join-Path ([System.IO.Path]::GetTempPath()) ("gs-pack-" + [guid]::NewGu
 $stage = Join-Path $base 'GameSketch'
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 
-$topFiles = 'package.json','package-lock.json','vite.config.js','README.md','HOWTO.md','LIESMICH.txt','START.bat'
+$topFiles = 'package.json','package-lock.json','vite.config.js','playwright.config.js','README.md','HOWTO.md','LICENSE','LIESMICH.txt','START.bat'
 foreach ($f in $topFiles) {
   $src = Join-Path $repo $f
   if (Test-Path $src) { Copy-Item $src (Join-Path $stage $f) }
 }
 Copy-Item (Join-Path $repo 'server') (Join-Path $stage 'server') -Recurse
 Copy-Item (Join-Path $repo 'web')    (Join-Path $stage 'web')    -Recurse
+Copy-Item (Join-Path $repo 'docs')   (Join-Path $stage 'docs')   -Recurse
+New-Item -ItemType Directory -Path (Join-Path $stage 'tools') -Force | Out-Null
+Copy-Item (Join-Path $repo 'tools\test-server.js') (Join-Path $stage 'tools\test-server.js')
 
 # safety: never ship dependencies, git history, private data, or stray scratch files
 $bad = Get-ChildItem $stage -Recurse -Force | Where-Object {

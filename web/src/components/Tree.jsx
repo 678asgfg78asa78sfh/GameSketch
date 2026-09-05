@@ -1,9 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, useDroppable } from "@dnd-kit/core";
 import { api } from "../api.js";
 import { useT } from "../i18n/index.jsx";
 import { DEFAULT_CATEGORIES } from "../pillars.js";
 import TreeNode from "./TreeNode.jsx";
+import { searchNodes } from "../nodeLinks.js";
+import { flushAll } from "../useAutosave.js";
 
 function nest(nodes) {
   const byId = new Map(nodes.map((n) => [n.id, { ...n, children: [] }]));
@@ -12,7 +14,11 @@ function nest(nodes) {
     if (n.parent && byId.has(n.parent)) byId.get(n.parent).children.push(n);
     else (roots[n.pillar] ||= []).push(n);
   }
-  for (const arr of Object.values(roots)) arr.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const sort = (items) => {
+    items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    items.forEach((node) => sort(node.children));
+  };
+  Object.values(roots).forEach(sort);
   return roots;
 }
 
@@ -24,7 +30,7 @@ function descendantIds(nodes, id) {
 }
 
 // One category column: its header is a drop target — dropping a node here un-nests it to top level.
-function CategorySection({ cat, roots, slug, selectedId, onSelect, onChanged, onAddRoot, t }) {
+function CategorySection({ cat, roots, slug, selectedId, onSelect, onChanged, onAddRoot, onError, t }) {
   const { setNodeRef, isOver } = useDroppable({ id: `cat:${cat.slug}` });
   const items = roots[cat.slug] || [];
   return (
@@ -46,22 +52,26 @@ function CategorySection({ cat, roots, slug, selectedId, onSelect, onChanged, on
       ) : (
         items.map((n) => (
           <TreeNode key={n.id} node={n} depth={0} slug={slug} pillarColor={cat.color}
-            selectedId={selectedId} onSelect={onSelect} onChanged={onChanged} />
+            selectedId={selectedId} onSelect={onSelect} onChanged={onChanged} onError={onError} />
         ))
       )}
     </section>
   );
 }
 
-export default function Tree({ project, selectedId, onSelect, onChanged }) {
+export default function Tree({ project, selectedId, onSelect, onChanged, onError }) {
   const { t } = useT();
   const cats = project.categories?.length ? project.categories : DEFAULT_CATEGORIES;
   const roots = useMemo(() => nest(project.nodes), [project.nodes]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const [query, setQuery] = useState(""), [progress, setProgress] = useState(""), [status, setStatus] = useState("");
+  const filtering = query.trim() || progress || status;
+  const results = useMemo(() => searchNodes(project.nodes, query, { progress, status }), [project.nodes, query, progress, status]);
 
   async function addRoot(pillar) {
-    const n = await api.createNode(project.slug, { pillar, title: t("tree.newIdea") });
-    onSelect(n.id); onChanged();
+    try { await flushAll(); const n = await api.createNode(project.slug, { pillar, title: t("tree.newIdea") });
+      await onChanged(n.action); onSelect(n.id);
+    } catch (e) { onError(e); }
   }
 
   function endOrder(filterFn) {
@@ -70,6 +80,7 @@ export default function Tree({ project, selectedId, onSelect, onChanged }) {
   }
 
   async function onDragEnd(e) {
+    await flushAll();
     const { active, over } = e;
     if (!over) return;
     const overId = String(over.id);
@@ -81,8 +92,8 @@ export default function Tree({ project, selectedId, onSelect, onChanged }) {
       if (!node) return;
       if (node.parent === null && node.pillar === pillar) return; // already a root there
       const order = endOrder((n) => !n.parent && n.pillar === pillar && n.id !== active.id);
-      await api.updateNode(project.slug, active.id, { parent: null, pillar, order });
-      onChanged();
+      const result = await api.updateNode(project.slug, active.id, { parent: null, pillar, order });
+      onChanged(result.action);
       return;
     }
 
@@ -91,16 +102,19 @@ export default function Tree({ project, selectedId, onSelect, onChanged }) {
     if (descendantIds(project.nodes, active.id).has(overId)) return;
     if (!project.nodes.find((n) => n.id === overId)) return;
     const order = endOrder((n) => n.parent === overId && n.id !== active.id);
-    await api.updateNode(project.slug, active.id, { parent: overId, order });
-    onChanged();
+    const result = await api.updateNode(project.slug, active.id, { parent: overId, order });
+    onChanged(result.action);
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <><div className="search-controls"><input className="field" data-project-search type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("qol.search")} aria-label={t("qol.search")} title={t("qol.searchHint")} onKeyDown={(e) => { if (e.key === "Escape") { setQuery(""); setProgress(""); setStatus(""); } if (e.key === "Enter" && results[0]) onSelect(results[0].id); }} />
+      <div className="toolbar"><select className="field" aria-label={t("qol.allProgress")} value={progress} onChange={(e) => setProgress(e.target.value)}><option value="">{t("qol.allProgress")}</option>{["new", "needs_work", "complete"].map((p) => <option key={p} value={p}>{t(`progress.${p}`)}</option>)}</select><select className="field" aria-label={t("qol.allStatus")} value={status} onChange={(e) => setStatus(e.target.value)}><option value="">{t("qol.allStatus")}</option>{["core", "side", "future"].map((s) => <option key={s} value={s}>{t(`status.${s}`)}</option>)}</select></div>
+    </div>
+    {filtering ? <div>{!results.length && <p className="muted">{t("qol.noResults")}</p>}{results.map((n) => <button className={`btn search-result ${n.id === selectedId ? "btn-primary" : "btn-ghost"}`} key={n.id} onClick={() => onSelect(n.id)}>{n.title}<small>{cats.find((c) => c.slug === n.pillar)?.label} · {t(`progress.${n.progress || "new"}`)}</small><small>{(n.body || "").replace(/[#*_`]/g, "").slice(0, 150)}</small></button>)}</div> : <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => onDragEnd(e).catch(onError)}>
       {cats.map((cat) => (
         <CategorySection key={cat.slug} cat={cat} roots={roots} slug={project.slug}
-          selectedId={selectedId} onSelect={onSelect} onChanged={onChanged} onAddRoot={addRoot} t={t} />
+          selectedId={selectedId} onSelect={onSelect} onChanged={onChanged} onAddRoot={addRoot} onError={onError} t={t} />
       ))}
-    </DndContext>
+    </DndContext>}</>
   );
 }

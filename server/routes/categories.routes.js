@@ -1,6 +1,7 @@
 import { requireWriteAccess } from "../pairing.js";
 import { getProject } from "../storage/projects.js";
 import { writeCategories } from "../storage/categories.js";
+import { recordAction } from "../storage/actions.js";
 
 const guard = { preHandler: requireWriteAccess };
 
@@ -12,15 +13,9 @@ export default async function categoryRoutes(app) {
     const project = await getProject(slug);
     if (!project) return reply.code(404).send({ error: "not found" });
 
-    // Don't silently orphan nodes: refuse to drop a category that still holds nodes.
-    const keep = new Set(next.map((c) => c.slug));
-    const used = new Set(project.nodes.map((n) => n.pillar));
-    const removedWithNodes = [...used].filter((s) => !keep.has(s));
-    if (removedWithNodes.length)
-      return reply.code(400).send({ error: `category not empty: ${removedWithNodes.join(", ")}` });
-
     try {
-      return { categories: writeCategories(slug, next, req.user) };
+      const { result, action } = await recordAction(slug, "categories", req.user, () => writeCategories(slug, next, req.user));
+      return { categories: result, action };
     } catch (e) { return reply.code(400).send({ error: String(e.message || e) }); }
   });
 }

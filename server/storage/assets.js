@@ -3,8 +3,9 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { assetsDir, projectDir } from "./paths.js";
 import { commitAll } from "./git.js";
+import { projectWrite } from "./lock.js";
 
-export async function saveAsset(slug, nodeId, { filename, buffer }, author) {
+export const saveAsset = projectWrite(async (slug, nodeId, { filename, buffer }, author) => {
   mkdirSync(assetsDir(slug), { recursive: true });
   const hash = createHash("sha1").update(buffer).digest("hex").slice(0, 8);
   const safe = filename.replace(/[^\w.\-]+/g, "_");
@@ -12,4 +13,4 @@ export async function saveAsset(slug, nodeId, { filename, buffer }, author) {
   writeFileSync(join(projectDir(slug), rel), buffer);
   await commitAll(projectDir(slug), { ...author, message: `asset: add ${safe}` });
   return rel;
-}
+});

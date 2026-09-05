@@ -5,26 +5,37 @@ import { api } from "../api.js";
 import { spring } from "../motion.js";
 import { useT } from "../i18n/index.jsx";
 import { PROGRESS_GLYPH, PROGRESS_COLOR, normalizeProgress } from "./ProgressBadge.jsx";
+import { flushAll } from "../useAutosave.js";
 
-export default function TreeNode({ node, depth, slug, pillarColor, selectedId, onSelect, onChanged }) {
+export default function TreeNode({ node, depth, slug, pillarColor, selectedId, onSelect, onChanged, onError }) {
   const { t } = useT();
-  const [open, setOpen] = useState(true);
+  const collapseKey = `gs_collapsed_${slug}_${node.id}`;
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem(collapseKey) !== "1"; } catch { return true; } });
+  function toggleOpen(next = !open) { setOpen(next); try { localStorage.setItem(collapseKey, next ? "0" : "1"); } catch { /* ignore */ } }
   const sel = node.id === selectedId;
   const prog = normalizeProgress(node.progress);
   const { attributes, listeners, setNodeRef: dragRef, isDragging } = useDraggable({ id: node.id });
   const { setNodeRef: dropRef, isOver } = useDroppable({ id: node.id });
 
   async function addChild() {
+    try { await flushAll();
     const n = await api.createNode(slug, { pillar: node.pillar, parent: node.id, title: t("tree.newIdea") });
-    onSelect(n.id); onChanged();
+    toggleOpen(true); await onChanged(n.action); onSelect(n.id);
+    } catch (e) { onError(e); }
   }
   async function addSibling() {
+    try { await flushAll();
     const n = await api.createNode(slug, { pillar: node.pillar, parent: node.parent ?? null, title: t("tree.newIdea") });
-    onSelect(n.id); onChanged();
+    await onChanged(n.action); onSelect(n.id);
+    } catch (e) { onError(e); }
   }
   function onKeyDown(e) {
-    if (e.key === "Enter") { e.preventDefault(); addSibling(); }
-    else if (e.key === "Tab") { e.preventDefault(); addChild(); }
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addChild(); }
+    else if (e.key === "Enter") { e.preventDefault(); addSibling(); }
+    else if (e.key === " ") { e.preventDefault(); onSelect(node.id); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); toggleOpen(true); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); toggleOpen(false); }
   }
 
   return (
@@ -33,8 +44,8 @@ export default function TreeNode({ node, depth, slug, pillarColor, selectedId, o
         className={`tree-row ${sel ? "sel" : ""} ${isOver ? "over" : ""}`}
         style={{ "--pc": pillarColor, marginLeft: depth * 15 }}>
         {node.children.length > 0 ? (
-          <span onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-            style={{ width: 14, textAlign: "center", color: "var(--text-faint)", fontSize: 9, transition: "transform .18s", transform: open ? "rotate(90deg)" : "none" }}>▶</span>
+          <button className="btn btn-ghost" aria-label={t("qol.collapse")} aria-expanded={open} onClick={(e) => { e.stopPropagation(); toggleOpen(); }}
+            style={{ padding: 0, width: 14, textAlign: "center", color: "var(--text-faint)", fontSize: 9, transition: "transform .18s", transform: open ? "rotate(90deg)" : "none" }}>▶</button>
         ) : (
           <span style={{ width: 14 }} />
         )}
@@ -54,7 +65,7 @@ export default function TreeNode({ node, depth, slug, pillarColor, selectedId, o
             exit={{ height: 0, opacity: 0, transition: { duration: 0.14 } }} style={{ overflow: "hidden" }}>
             {node.children.map((c) => (
               <TreeNode key={c.id} node={c} depth={depth + 1} slug={slug} pillarColor={pillarColor}
-                selectedId={selectedId} onSelect={onSelect} onChanged={onChanged} />
+                selectedId={selectedId} onSelect={onSelect} onChanged={onChanged} onError={onError} />
             ))}
           </motion.div>
         )}
