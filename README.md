@@ -8,7 +8,7 @@
 
 ![license](https://img.shields.io/badge/license-MIT-7c8cff)
 &nbsp;![node](https://img.shields.io/badge/node-%E2%89%A5%2020-2ee6a8)
-&nbsp;![local-first](https://img.shields.io/badge/local--first-no%20tracking-ff6b9d)
+&nbsp;![local-first](https://img.shields.io/badge/local--first-no%20telemetry-ff6b9d)
 
 </div>
 
@@ -32,13 +32,16 @@ Every project starts with these (you can rename / recolour / add / remove them p
 
 - 🌳 **Idea tree** — add / nest / reorder / duplicate subtrees, status `core·side·future`, alternatives & notes; remembered collapse state; Enter = sibling, Ctrl/Cmd+Enter = child when a tree row is focused
 - ✍️ **Markdown editor** with live preview and autosave
+- ☑ **Optional mini tracker** — per-idea progress bars, tasks and milestones, manual completion/reopening, and an overall progress summary
+- 👁 **View by default** — a remembered preference; check off tasks while reading, with text, attachments and drawings on display
+- 🌱 **Continue an idea** — create a nested next version from a completed idea, keeping the original; optionally reuse its checklist
 - 🎨 **Doodle canvas** per node (Excalidraw, fully offline)
 - 📎 **Attachments** — file picker or drag & drop, image thumbnails, remove a reference with undo
 - 🕓 **Git history + one-click restore**, with an author on every change
 - 🤖 **AI** — a read-API for external agents *and* an in-app copilot, pointed at a local endpoint, OpenRouter, or the local `claude` CLI
 - 🌍 **English / Deutsch / Русский**
 - 🔒 **No phone-home** — local fonts, no CDNs, no telemetry
-- 🔎 **Search and links** — title/body search, progress and priority filters, `[[id]]` links with completion and backlinks
+- 🔎 **Search and links** — title/body/checklist search, progress and priority filters, `[[id]]` links with completion and backlinks
 - ↩ **Trash and undo** — recover complete subtrees; undo structural and Copilot actions without overwriting newer work
 - 📖 **Full document** — contents, drawings and attachments; standalone HTML with embedded local media, print/PDF, Markdown and JSON exports
 - 🧩 **Starting points** — filled mechanic, enemy and playtest templates, plus a linked example project
@@ -48,6 +51,18 @@ Every project starts with these (you can rename / recolour / add / remove them p
 
 - **Node.js ≥ 20** (tested on 24)
 - **git** on your `PATH` (each project is its own git repo → history, author, restore)
+
+## Optional progress tracking
+
+Open an idea and choose **Enable progress**. Add tasks or milestones, then check them off in either the editor or the view. Each step counts equally towards the percentage. **Complete** marks a version finished even if some tasks remain; those tasks stay recorded. **Reopen** restores its checklist progress. An empty checklist starts at 0%; a fully checked checklist is 100%. You can add more steps without erasing the completed ones.
+
+Enable **View by default** in the project header to open ideas directly as readable pages. This preference is stored for your account in the current browser. Use the **Text** tab to edit an individual idea; uncheck the preference to make editing the default again.
+
+From a completed idea, **Continue developing** creates a new child version with its text, attachments and an independent drawing. Start with an empty checklist or copy the previous steps as unchecked tasks. The original stays unchanged; other child ideas are not copied. Previous/next links keep the chain navigable. Repeating the same continuation request opens the existing next version.
+
+**Overall progress** averages actively tracked ideas with equal weight, excluding earlier versions that have a successor. It is a completion indicator, not a time estimate. Existing ideas marked *Needs Work* or *Complete* participate too; *Needs Work* without a checklist means 0% measurable completion. Untracked new ideas do not dilute the total. **Hide tracking** excludes an idea while preserving its tasks for later.
+
+Task changes and continuation support **Undo**. Checklists and version links travel with project backups, JSON exports and duplicates; HTML/PDF and Markdown include the progress and task list. See the [German update guide](docs/mini-tracker-2026-09-06.md).
 
 ## Quick start
 
@@ -92,7 +107,7 @@ Use **Download backup** in the project header to save a `.gamesketch` file. **Op
 For a whole installation or larger projects, stop the server and copy `data/` (keep that copy private: `config.json` contains credentials). Browser conversations and unsaved text drafts live in local browser storage, scoped by user and project; they are not part of a project backup.
 
 Deleting an idea moves it and its descendants to **Trash**. **Actions** lists the latest 50 structural/Copilot actions with undo; undo refuses when newer edits or dependencies would be lost. Restoring an earlier text version is available under node → **History** → Restore.
-Restore brings back the title, text, idea type and statuses, including revisions from before a category move.
+Restore brings back the title, text, idea type, statuses and checklist, including revisions from before a category move.
 The current tree placement, attachments and canvas stay attached to the node.
 
 ## AI

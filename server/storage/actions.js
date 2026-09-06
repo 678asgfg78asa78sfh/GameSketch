@@ -37,7 +37,7 @@ export function describeChanges(files) {
     if (after) entry.after = after;
     byId.set(id, entry);
   }
-  const fields = ["title", "body", "pillar", "parent", "order", "status", "kind", "progress", "attachments", "canvas"];
+  const fields = ["title", "body", "pillar", "parent", "order", "status", "kind", "progress", "attachments", "canvas", "tracking", "continued_from", "version"];
   return [...byId.values()].map(({ id, before, after }) => ({
     id, title: (after || before).title, type: !before ? "create" : !after ? "delete" : "update",
     fields: fields.filter((key) => JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key]))

@@ -9,6 +9,7 @@ import { snapshot, projectFile, writeSnapshotFile, problem } from "./files.js";
 import { ensureRepo, commitAll, exportGitBundle, importGitBundle } from "./git.js";
 import { uniqueSlug, getProject } from "./projects.js";
 import { slugify } from "../util/slug.js";
+import { validateTracking } from "./tracking.js";
 
 export const exportBackup = projectWrite(async (slug) => {
   if (!existsSync(projectMeta(slug))) throw problem("PROJECT_NOT_FOUND", 404);
@@ -63,6 +64,7 @@ export async function importBackup(buffer, author, title) {
     const byId = new Map(p.nodes.map((n) => [n.id, n]));
     if (byId.size !== p.nodes.length) throw problem("INVALID_BACKUP");
     for (const n of p.nodes) {
+      if (n.tracking != null) validateTracking(n.tracking);
       if (typeof n.title !== "string" || typeof n.id !== "string" || !p.categories.some((c) => c.slug === n.pillar)
         || !Object.hasOwn(backup.files, `nodes/${n.pillar}/${n.id}.md`) || !Array.isArray(n.attachments)
         || n.attachments.some((path) => typeof path !== "string" || !/^assets\/[A-Za-z0-9_.-]+$/.test(path) || !Object.hasOwn(backup.files, path))

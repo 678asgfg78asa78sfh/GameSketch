@@ -43,3 +43,23 @@ test("PATCH move: nesting under a node works; cyclic move returns 400", async ()
   assert.equal(full.nodes.find((n) => n.id === a.id).parent, null);
   await app.close();
 });
+
+test("tracker endpoints require write access and report validation and completion errors", async () => {
+  const app = await buildServer(), cookies = { gs_session: await authed(app) };
+  try {
+    const p = (await app.inject({ method: "POST", url: "/api/projects", cookies, payload: { title: "Tracker API" } })).json();
+    const node = (await app.inject({ method: "POST", url: `/api/projects/${p.slug}/nodes`, cookies, payload: { pillar: "scope", title: "N" } })).json();
+    const base = `/api/projects/${p.slug}/nodes/${node.id}`;
+    for (const endpoint of ["tracking", "continue"])
+      assert.equal((await app.inject({ method: "POST", url: `${base}/${endpoint}`, payload: {} })).statusCode, 401);
+    const send = (endpoint, payload) => app.inject({ method: "POST", url: `${base}/${endpoint}`, cookies, payload });
+    assert.equal((await send("continue", {})).statusCode, 409);
+    assert.equal((await send("tracking", { operation: "enable" })).statusCode, 200);
+    assert.equal((await send("tracking", { operation: "add", task: { id: "x", title: " ", kind: "task" } })).statusCode, 400);
+    assert.equal((await send("tracking", { operation: "complete" })).json().progress, "complete");
+    assert.equal((await send("continue", { title: " " })).statusCode, 400);
+    const next = await send("continue", { title: "Next" });
+    assert.equal(next.statusCode, 200); assert.equal(next.json().parent, node.id);
+    assert.equal(next.json().action.kind, "continue");
+  } finally { await app.close(); }
+});

@@ -18,6 +18,7 @@ foreach ($f in $topFiles) {
   if (Test-Path $src) { Copy-Item $src (Join-Path $stage $f) }
 }
 Copy-Item (Join-Path $repo 'server') (Join-Path $stage 'server') -Recurse
+Copy-Item (Join-Path $repo 'shared') (Join-Path $stage 'shared') -Recurse
 Copy-Item (Join-Path $repo 'web')    (Join-Path $stage 'web')    -Recurse
 Copy-Item (Join-Path $repo 'docs')   (Join-Path $stage 'docs')   -Recurse
 New-Item -ItemType Directory -Path (Join-Path $stage 'tools') -Force | Out-Null

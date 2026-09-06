@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { api } from "../api.js";
@@ -6,14 +6,24 @@ import { spring } from "../motion.js";
 import { useT } from "../i18n/index.jsx";
 import { PROGRESS_GLYPH, PROGRESS_COLOR, normalizeProgress } from "./ProgressBadge.jsx";
 import { flushAll } from "../useAutosave.js";
+import ProgressMeter from "./ProgressMeter.jsx";
+import { trackingProgress } from "../../../shared/tracking.js";
 
 export default function TreeNode({ node, depth, slug, pillarColor, selectedId, onSelect, onChanged, onError }) {
   const { t } = useT();
   const collapseKey = `gs_collapsed_${slug}_${node.id}`;
   const [open, setOpen] = useState(() => { try { return localStorage.getItem(collapseKey) !== "1"; } catch { return true; } });
+  const previousSelection = useRef(selectedId);
+  useEffect(() => {
+    if (previousSelection.current === selectedId) return;
+    previousSelection.current = selectedId;
+    const containsSelection = (n) => n.id === selectedId || n.children.some(containsSelection);
+    if (node.children.some(containsSelection)) toggleOpen(true);
+  }, [selectedId]);
   function toggleOpen(next = !open) { setOpen(next); try { localStorage.setItem(collapseKey, next ? "0" : "1"); } catch { /* ignore */ } }
   const sel = node.id === selectedId;
   const prog = normalizeProgress(node.progress);
+  const work = trackingProgress(node);
   const { attributes, listeners, setNodeRef: dragRef, isDragging } = useDraggable({ id: node.id });
   const { setNodeRef: dropRef, isOver } = useDroppable({ id: node.id });
 
@@ -55,6 +65,8 @@ export default function TreeNode({ node, depth, slug, pillarColor, selectedId, o
         <span style={{ flex: 1, fontSize: 14, color: node.status === "future" ? "var(--text-dim)" : "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {node.title}
         </span>
+        {node.version && <small className="version-tag">v{node.version}</small>}
+        {work.enabled && <ProgressMeter compact percent={work.percent} label={t("tracker.nodeProgress", { title: node.title })} />}
         <span title={t(`progress.${prog}`)} style={{ fontSize: 12, lineHeight: 1, color: PROGRESS_COLOR[prog], flexShrink: 0 }}>{PROGRESS_GLYPH[prog]}</span>
         {node.kind !== "idea" && <span className="mono" style={{ fontSize: 10 }}>{node.kind === "alternative" ? t("tree.kindAlt") : t("tree.kindNote")}</span>}
         <button className="btn btn-ghost btn-icon" style={{ padding: "2px 7px", fontSize: 14 }} onClick={(e) => { e.stopPropagation(); addChild(); }} title={t("tree.childIdea")}>＋</button>

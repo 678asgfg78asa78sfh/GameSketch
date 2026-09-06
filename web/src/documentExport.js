@@ -1,6 +1,7 @@
 import DOMPurify from "dompurify";
 import { api } from "./api.js";
 import { orderedNodes, renderMarkdown, escapeHtml as esc } from "./nodeLinks.js";
+import { trackingProgress, projectProgress } from "../../shared/tracking.js";
 
 export const isImage = (path) => /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(path);
 export async function canvasSvg(slug, id) {
@@ -39,9 +40,14 @@ export async function standaloneDocument(project, t, lang) {
       attachments.push(isImage(path) ? `<figure><img src="${url}" alt="${esc(name)}"><figcaption>${esc(name)}</figcaption></figure>` : `<p><a download="${esc(name)}" href="${url}">${esc(name)}</a></p>`);
     }
     const svg = n.canvas ? await canvasSvg(project.slug, n.id) : "";
-    sections.push(`<section id="node-${n.id}"><p class="meta">${esc(project.categories.find((c) => c.slug === n.pillar)?.label || n.pillar)} · ${esc(n.status)} · ${esc(t(`progress.${n.progress || "new"}`))}</p><h2>${esc(n.title)}</h2>${doc.body.innerHTML}${attachments.join("")}${svg ? `<figure>${svg}</figure>` : ""}</section>`);
+    const p = trackingProgress(n);
+    const tracking = p.enabled ? `<p>${esc(t("tracker.heading"))}: ${p.percent}%${n.tracking?.completed ? ` · ${esc(t("tracker.manuallyClosed"))}` : ""}</p><ul>${p.tasks.map((task) => `<li>${task.done ? "☑" : "☐"} ${task.kind === "milestone" ? `${esc(t("tracker.milestone"))}: ` : ""}${esc(task.title)}</li>`).join("")}</ul>` : "";
+    const previous = nodes.find((node) => node.id === n.continued_from);
+    const version = previous ? `<p><a href="#node-${previous.id}">${esc(t("tracker.previous"))}: ${esc(previous.title)}</a> · ${esc(t("tracker.version", { n: n.version }))}</p>` : "";
+    sections.push(`<section id="node-${n.id}"><p class="meta">${esc(project.categories.find((c) => c.slug === n.pillar)?.label || n.pillar)} · ${esc(n.status)} · ${esc(t(`progress.${p.status}`))}</p><h2>${esc(n.title)}</h2>${version}${tracking}${doc.body.innerHTML}${attachments.join("")}${svg ? `<figure>${svg}</figure>` : ""}</section>`);
   }
+  const overall = projectProgress(project.nodes);
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(project.title)}</title><style>
 body{font:16px/1.65 system-ui,sans-serif;max-width:1000px;margin:auto;padding:40px;color:#172033;background:#fff}h1,h2,h3{line-height:1.2}a{color:#394dcc}section{border-top:1px solid #dce1e8;margin-top:36px;padding-top:24px;scroll-margin-top:20px}.meta,figcaption{color:#526071;font-size:13px}img,svg{max-width:100%;height:auto}svg{max-height:700px}figure{margin:20px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f3f7;padding:16px;border-radius:8px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #dce1e8;padding:8px;text-align:left}blockquote{border-left:3px solid #7c8cff;padding-left:16px}.missing-link{color:#a33;text-decoration:underline dotted}nav ul{list-style:none;padding-left:0}@media print{body{padding:0}figure{break-inside:avoid}}
-</style></head><body><h1>${esc(project.title)}</h1><nav aria-label="${esc(t("qol.contents"))}"><h2>${esc(t("qol.contents"))}</h2><ul>${toc}</ul></nav>${sections.join("")}</body></html>`;
+</style></head><body><h1>${esc(project.title)}</h1>${overall.total ? `<p>${esc(t("tracker.overall"))}: ${overall.percent}% · ${esc(t("tracker.summary", overall))}</p>` : ""}<nav aria-label="${esc(t("qol.contents"))}"><h2>${esc(t("qol.contents"))}</h2><ul>${toc}</ul></nav>${sections.join("")}</body></html>`;
 }

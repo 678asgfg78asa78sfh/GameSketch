@@ -3,8 +3,13 @@ import en from "./en.js";
 import de from "./de.js";
 import ru from "./ru.js";
 import qol from "./qol.js";
+import tracker from "./tracker.js";
 
-const DICTS = { en: { ...en, qol: qol.en }, de: { ...de, qol: qol.de }, ru: { ...ru, qol: qol.ru } };
+const DICTS = Object.fromEntries(Object.entries({ en, de, ru }).map(([lang, base]) => [lang, { ...base, tracker: tracker[lang], qol: {
+  ...qol[lang], errors: { ...qol[lang].errors, ...tracker[lang].errors },
+  kinds: { ...qol[lang].kinds, tracking: tracker[lang].action, continue: tracker[lang].continued },
+  fields: { ...qol[lang].fields, tracking: tracker[lang].trackingField, continued_from: tracker[lang].previousField, version: tracker[lang].versionField },
+} }]));
 
 // [code, native label] — order shown in pickers.
 export const LANGS = [

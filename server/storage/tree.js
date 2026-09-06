@@ -1,4 +1,5 @@
 import { DEFAULT_CATEGORIES } from "./categories.js";
+import { trackingProgress, projectProgress } from "../../shared/tracking.js";
 
 export function buildTree(nodes) {
   const byId = new Map(nodes.map((n) => [n.id, { ...n, children: [] }]));
@@ -18,6 +19,12 @@ export function buildTree(nodes) {
 function emitNode(n, depth, out) {
   const tag = n.kind === "alternative" ? " (Alternative)" : n.kind === "note" ? " (Notiz)" : "";
   out.push(`${"#".repeat(Math.min(depth, 6))} ${n.title} [${n.status}]${tag}`);
+  const progress = trackingProgress(n);
+  if (n.continued_from) out.push("", `Version ${n.version || 1} · Previous: [[${n.continued_from}]]`);
+  if (progress.enabled) {
+    out.push("", `Progress: ${progress.percent}%${n.tracking?.completed ? " (manually completed)" : ""}`);
+    for (const task of progress.tasks) out.push(`- [${task.done ? "x" : " "}] ${task.kind === "milestone" ? "◆ Milestone: " : ""}${task.title.replace(/[\r\n]+/g, " ")}`);
+  }
   if (n.body && n.body.trim()) out.push("", n.body.trim());
   out.push("");
   n.children.forEach((c) => emitNode(c, depth + 1, out));
@@ -27,6 +34,8 @@ export function flattenToMarkdown(project, nodes) {
   const tree = buildTree(nodes);
   const cats = (project.categories && project.categories.length ? project.categories : DEFAULT_CATEGORIES);
   const out = [`# ${project.title || "Untitled"}`, ""];
+  const progress = projectProgress(nodes);
+  if (progress.total) out.push(`Overall progress: ${progress.percent}% (${progress.done}/${progress.total} tracked ideas complete)`, "");
   for (const c of cats) {
     out.push(`## ${c.label}`, "");
     (tree[c.slug] || []).forEach((n) => emitNode(n, 3, out));

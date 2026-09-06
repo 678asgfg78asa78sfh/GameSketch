@@ -8,6 +8,8 @@ import { isCategorySlug, readCategories } from "./categories.js";
 import { projectWrite } from "./lock.js";
 import { projectFile, problem } from "./files.js";
 import { readCanvas, writeCanvas } from "./canvas.js";
+import { validateTracking, changeTracking } from "./tracking.js";
+import { trackingProgress } from "../../shared/tracking.js";
 
 function nowIso() { return new Date().toISOString(); }
 
@@ -49,6 +51,7 @@ export async function getNode(slug, id) {
 }
 
 export const createNode = projectWrite(async (slug, input, author) => {
+  const tracking = input.tracking === undefined ? null : validateTracking(input.tracking);
   if (!existsSync(projectMeta(slug))) throw problem("PROJECT_NOT_FOUND", 404);
   const all = await listNodes(slug);
   const parent = input.parent ? all.find((n) => n.id === input.parent) : null;
@@ -66,8 +69,9 @@ export const createNode = projectWrite(async (slug, input, author) => {
     alternatives_to: input.alternatives_to ?? null,
     attachments: input.attachments || [], canvas: input.canvas ?? null,
     created_by: author.name, created_at: ts, updated_by: author.name, updated_at: ts,
-    body: input.body || "",
+    body: input.body || "", tracking,
   };
+  if (tracking?.enabled) n.progress = trackingProgress(n).status;
   mkdirSync(nodesDir(slug, n.pillar), { recursive: true });
   writeFileSync(nodePath(slug, n.pillar, id), nodeToFile(n));
   await commitAll(projectDir(slug), { ...author, message: `node: create "${n.title}"` });
@@ -77,16 +81,57 @@ export const createNode = projectWrite(async (slug, input, author) => {
 export const updateNode = projectWrite(async (slug, id, patch, author) => {
   let n = await getNode(slug, id);
   if (!n) throw new Error("node not found");
-  const { parent, order, pillar, id: _id, created_by: _createdBy, created_at: _createdAt, ...fields } = patch;
+  const { parent, order, pillar, id: _id, created_by: _createdBy, created_at: _createdAt,
+    continued_from: _continuedFrom, version: _version, ...fields } = patch;
+  if (fields.tracking !== undefined) fields.tracking = validateTracking(fields.tracking);
+  // Preserve compatibility with clients that still write the three-state work status.
+  if (fields.progress !== undefined && fields.tracking === undefined && n.tracking?.enabled) {
+    if (!["new", "needs_work", "complete"].includes(fields.progress)) throw problem("INVALID_TRACKING");
+    fields.tracking = { ...n.tracking, completed: fields.progress === "complete" };
+  }
   if (parent !== undefined || order !== undefined || pillar !== undefined)
     n = await moveNode(slug, id, { parent, order, pillar }, author);
   if (!Object.keys(fields).length) return n;
   const next = { ...n, ...fields, id: n.id,
     updated_by: author.name, updated_at: nowIso() };
+  if (next.tracking?.enabled) next.progress = trackingProgress(next).status;
   mkdirSync(nodesDir(slug, next.pillar), { recursive: true });
   writeFileSync(nodePath(slug, next.pillar, id), nodeToFile(next));
   await commitAll(projectDir(slug), { ...author, message: `node: edit "${next.title}"` });
   return next;
+});
+
+export const updateTracking = projectWrite(async (slug, id, input, author) => {
+  const node = await getNode(slug, id);
+  if (!node) throw problem("NODE_NOT_FOUND", 404);
+  return updateNode(slug, id, { tracking: changeTracking(node, input) }, author);
+});
+
+export const continueNode = projectWrite(async (slug, id, input, author) => {
+  const all = await listNodes(slug);
+  const source = all.find((n) => n.id === id);
+  if (!source) throw problem("NODE_NOT_FOUND", 404);
+  // Retrying a request must not create a second, indistinguishable next version.
+  const existing = all.find((n) => n.continued_from === id);
+  if (existing) return existing;
+  if (!trackingProgress(source).complete) throw problem("VERSION_NOT_COMPLETE", 409);
+  if (input?.title !== undefined && (typeof input.title !== "string" || !input.title.trim() || input.title.length > 500)) throw problem("INVALID_VERSION");
+  if (input?.carryTasks !== undefined && typeof input.carryTasks !== "boolean") throw problem("INVALID_VERSION");
+  const nextId = ulid(), ts = nowIso(), version = (source.version || 1) + 1;
+  const baseTitle = source.version ? source.title.replace(/ · v\d+$/, "") : source.title;
+  const copy = { ...source, id: nextId, parent: source.id, continued_from: source.id, version,
+    title: input?.title?.trim() || `${baseTitle} · v${version}`,
+    order: all.filter((n) => n.parent === source.id).reduce((max, n) => Math.max(max, n.order || 0), -1) + 1,
+    progress: "new", tracking: { enabled: true, completed: false,
+      tasks: input?.carryTasks ? (source.tracking?.tasks || []).map((task) => ({ ...task, id: ulid(), done: false })) : [] },
+    canvas: source.canvas ? `canvases/${nextId}.excalidraw` : null,
+    created_by: author.name, created_at: ts, updated_by: author.name, updated_at: ts };
+  // Read before writing so a broken source drawing cannot leave a half-created version.
+  const drawing = source.canvas ? await readCanvas(slug, source.id) : null;
+  writeFileSync(nodePath(slug, copy.pillar, nextId), nodeToFile(copy));
+  if (drawing) await writeCanvas(slug, nextId, drawing, author);
+  await commitAll(projectDir(slug), { ...author, message: `node: continue "${source.title}" as v${version}` });
+  return copy;
 });
 
 // Collect the ids of every descendant of `id` from a flat node list.
@@ -206,6 +251,8 @@ export const duplicateNode = projectWrite(async (slug, id, title, author) => {
       title: n.id === id ? (title || `${n.title} (copy)`) : n.title,
       order: n.id === id ? (n.order ?? 0) + 0.5 : n.order,
       alternatives_to: ids.get(n.alternatives_to) || n.alternatives_to,
+      continued_from: ids.get(n.continued_from) || null,
+      version: ids.has(n.continued_from) ? n.version : null,
       body: (n.body || "").replace(/\[\[([^\]|]+)(\|[^\]]*)?\]\]/g, (match, ref, label = "") => ids.has(ref) ? `[[${ids.get(ref)}${label}]]` : match),
       created_by: author.name, created_at: nowIso(), updated_by: author.name, updated_at: nowIso(),
       canvas: n.canvas ? `canvases/${nextId}.excalidraw` : null };
@@ -230,7 +277,7 @@ export const restoreNode = projectWrite(async (slug, id, commit, author) => {
   // Restoring an old parent could create a cycle or orphan an already moved subtree.
   const old = fileToNode(raw);
   const restored = { ...n, title: old.title, body: old.body, status: old.status,
-    kind: old.kind, progress: old.progress, updated_by: author.name, updated_at: nowIso() };
+    kind: old.kind, progress: old.progress, tracking: old.tracking || null, updated_by: author.name, updated_at: nowIso() };
   writeFileSync(nodePath(slug, n.pillar, id), nodeToFile(restored));
   await commitAll(projectDir(slug), { ...author, message: `node: restore "${n.title}"` });
   return restored;

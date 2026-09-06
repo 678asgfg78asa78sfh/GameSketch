@@ -12,6 +12,8 @@ import { errorText } from "../ui.js";
 import { linkedIds } from "../nodeLinks.js";
 import LinkTextarea from "./LinkTextarea.jsx";
 import NodeActions from "./NodeActions.jsx";
+import NodeTracker from "./NodeTracker.jsx";
+import { NodeMedia } from "./DocumentReader.jsx";
 
 // Excalidraw is heavy (~3MB) — only load it when the canvas tab is opened.
 const CanvasPane = lazy(() => import("./CanvasPane.jsx"));
@@ -19,11 +21,12 @@ const CanvasPane = lazy(() => import("./CanvasPane.jsx"));
 const STATUS_CYCLE = { core: "side", side: "future", future: "core" };
 const TABS = ["edit", "preview", "canvas", "history", "assist"];
 
-export default function NodeEditor({ slug, node, project, userName, onNavigate, onChanged, maximized, onToggleMaximize }) {
+export default function NodeEditor({ slug, node, project, userName, onNavigate, onChanged, maximized, onToggleMaximize, preferredTab = "edit" }) {
   const { t } = useT();
   const [title, setTitle] = useState(node.title);
   const [body, setBody] = useState(node.body || "");
-  const [tab, setTab] = useState("edit");
+  const [tab, setTab] = useState(preferredTab);
+  useEffect(() => { setTab(preferredTab); }, [preferredTab]);
   const [actionError, setActionError] = useState("");
   const [actionBusy, setActionBusy] = useState(false);
   const dirtyFields = useRef({});
@@ -60,7 +63,7 @@ export default function NodeEditor({ slug, node, project, userName, onNavigate, 
   async function runAction(action) {
     if (actionBusy) return;
     setActionBusy(true); setActionError("");
-    try { await flushAll(); const result = await action(); await onChanged(result?.action); }
+    try { await flushAll(); const result = await action(); await onChanged(result?.action); return result; }
     catch (e) { setActionError(errorText(e, t)); }
     finally { setActionBusy(false); }
   }
@@ -78,17 +81,17 @@ export default function NodeEditor({ slug, node, project, userName, onNavigate, 
   while (parentNode && !seen.has(parentNode.id)) { seen.add(parentNode.id); ancestors.unshift(parentNode); parentNode = project.nodes.find((n) => n.id === parentNode.parent); }
   const backlinks = useMemo(() => project.nodes.filter((n) => n.id !== node.id && linkedIds(n.body).has(node.id)), [project.nodes, node.id]);
   return (
-    <div style={{ padding: maximized ? "28px 40px" : 28, maxWidth: "100%", margin: "0 auto" }}>
+    <div className="node-editor" style={{ padding: maximized ? "28px 40px" : 28, maxWidth: "100%", margin: "0 auto" }}>
       <nav className="toolbar breadcrumbs" aria-label={t("qol.breadcrumb")}><span className="muted">{project.categories.find((c) => c.slug === node.pillar)?.label}</span>{ancestors.map((n) => <span key={n.id}> › <button className="btn btn-ghost" onClick={() => onNavigate(n.id)}>{n.title}</button></span>)}</nav>
       {draft && <div className="notice" role="status">{t("qol.draft")} <button className="btn btn-ghost" onClick={() => { edit(draft); setDraft(null); }}>{t("qol.recoverDraft")}</button><button className="btn btn-ghost" onClick={() => { localStorage.removeItem(draftKey); setDraft(null); }}>{t("qol.discardDraft")}</button></div>}
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 11, marginBottom: 16 }}>
-        <StatusBadge status={node.status} onClick={cycleStatus} />
-        <select className="field" disabled={actionBusy} style={{ width: "auto", padding: "7px 28px 7px 11px" }} value={node.kind} onChange={(e) => setKind(e.target.value)}>
+        <StatusBadge status={node.status} onClick={tab === "edit" ? cycleStatus : undefined} />
+        {tab === "edit" ? <select className="field" disabled={actionBusy} style={{ width: "auto", padding: "7px 28px 7px 11px" }} value={node.kind} onChange={(e) => setKind(e.target.value)}>
           <option value="idea">{t("editor.kindIdea")}</option>
           <option value="alternative">{t("editor.kindAlternative")}</option>
           <option value="note">{t("editor.kindNote")}</option>
-        </select>
-        <ProgressBadge progress={node.progress || "new"} onClick={cycleProgress} />
+        </select> : <small className="muted">{t(`editor.${node.kind === "alternative" ? "kindAlternative" : node.kind === "note" ? "kindNote" : "kindIdea"}`)}</small>}
+        <ProgressBadge progress={node.progress || "new"} onClick={tab === "edit" && !node.tracking?.enabled ? cycleProgress : undefined} />
         <span className="mono" style={{ marginLeft: 4, color: saved ? "var(--content)" : "var(--text-faint)" }}>
           {error ? t("editor.saveFailed") : saved ? t("editor.saved") : t("editor.saving")}
         </span>
@@ -98,7 +101,7 @@ export default function NodeEditor({ slug, node, project, userName, onNavigate, 
             {maximized ? "🗗" : "⛶"}
           </button>
         )}
-        <button className="btn btn-ghost" disabled={actionBusy} style={{ marginLeft: onToggleMaximize ? 0 : "auto" }} onClick={del}>{t("editor.delete")}</button>
+        {tab === "edit" && <button className="btn btn-ghost" disabled={actionBusy} style={{ marginLeft: onToggleMaximize ? 0 : "auto" }} onClick={del}>{t("editor.delete")}</button>}
       </div>
 
       {(error || actionError) && <div role="alert" style={{ color: "var(--gameloop)", marginBottom: 12 }}>
@@ -106,16 +109,18 @@ export default function NodeEditor({ slug, node, project, userName, onNavigate, 
         {error && <button className="btn btn-ghost" onClick={() => flush().catch(() => {})}>{t("common.retry")}</button>}
       </div>}
 
-      <input aria-label={t("editor.titlePlaceholder")} value={title} disabled={actionBusy} onChange={(e) => edit({ title: e.target.value })}
+      {tab === "edit" ? <input aria-label={t("editor.titlePlaceholder")} value={title} disabled={actionBusy} onChange={(e) => edit({ title: e.target.value })}
         placeholder={t("editor.titlePlaceholder")}
-        style={{ width: "100%", fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em", border: "none", background: "transparent", color: "var(--text)", padding: 0, outline: "none" }} />
+        style={{ width: "100%", fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em", border: "none", background: "transparent", color: "var(--text)", padding: 0, outline: "none" }} /> : <h1 className="node-view-title">{title}</h1>}
 
-      <NodeActions project={project} node={node} runAction={runAction} onNavigate={onNavigate} disabled={actionBusy} />
+      {tab === "edit" && <NodeActions project={project} node={node} runAction={runAction} onNavigate={onNavigate} disabled={actionBusy} />}
       <div className="tabs" style={{ width: "fit-content", maxWidth: "100%", overflowX: "auto", margin: "20px 0" }}>
         {TABS.map((tb) => (
           <button key={tb} disabled={actionBusy} className={`tab ${tab === tb ? "active" : ""}`} onClick={() => selectTab(tb)}>{t(`editor.tabs.${tb}`)}</button>
         ))}
       </div>
+
+      {["edit", "preview"].includes(tab) && <NodeTracker slug={slug} node={node} project={project} busy={actionBusy} error={actionError} runAction={runAction} onNavigate={onNavigate} />}
 
       {tab === "edit" && (
         <>
@@ -125,7 +130,7 @@ export default function NodeEditor({ slug, node, project, userName, onNavigate, 
           <Attachments slug={slug} node={node} onChanged={onChanged} />
         </>
       )}
-      {tab === "preview" && <MarkdownView text={body} nodes={project.nodes} slug={slug} onNavigate={onNavigate} />}
+      {tab === "preview" && <><MarkdownView text={body} nodes={project.nodes} slug={slug} onNavigate={onNavigate} /><NodeMedia slug={slug} node={node} /></>}
       {tab === "canvas" && (
         <Suspense fallback={<div className="mono">{t("editor.canvasEngineLoading")}</div>}>
           <CanvasPane slug={slug} node={node} maximized={maximized} />

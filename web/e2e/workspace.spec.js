@@ -129,7 +129,7 @@ test("document export embeds images and preserves navigable cross references", a
     for (const frame of page.frames()) { const result = await frame.evaluate(() => window.__printedDocument); if (result) return result; }
     return null;
   }).toEqual({ title: p.title, embeddedImages: 1 });
-  await page.getByRole("button", { name: "Bearbeiten", exact: true }).click();
+  await page.getByRole("button", { name: "Ideen", exact: true }).click();
   page.on("dialog", (d) => d.accept());
   await page.getByRole("button", { name: /^Anhang entfernen:/ }).click();
   await expect(page.locator("main .attachment-card")).toHaveCount(0);
@@ -169,7 +169,10 @@ test("an in-flight chat response stays in its original project across navigation
   await expect.poll(() => page.evaluate(() => Object.entries(localStorage).some(([key, value]) => key.includes("gs_chat_v2") && value.includes("Vorschlag für: Langsame Antwort")))).toBe(true);
   await expect(chat.getByText("Änderungsvorschau", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "← Projekte", exact: true }).click();
+  // With more test projects the target card may sit behind the floating chat.
+  await chat.getByRole("button", { name: "Schließen", exact: true }).click();
   await page.locator(".project-card").filter({ hasText: p.title }).locator(":scope > button").click();
+  await page.getByRole("button", { name: "Copilot", exact: true }).click();
   await expect(chat.getByText("Änderungsvorschau", { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: "Copilot", exact: true }).click();

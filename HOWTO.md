@@ -40,9 +40,9 @@ curl -s -H "Authorization: Bearer <token>" http://127.0.0.1:4321/api/projects
 # -> [{ "title": "My Game", "slug": "my-game" }, ...]
 ```
 
-The pairing token works on every **read** endpoint (project list, project tree, and the
-`export.*` / `subtree.*` exports below). Only **writes** (creating projects/nodes) require a
-logged-in session — agents read; the user edits (or uses the in-app copilot).
+An approved pairing token works on every **read** endpoint (project list, project tree, and the
+`export.*` / `subtree.*` exports below). Editing nodes additionally requires **Read + write**
+approval; see section 6. Creating projects and uploading assets require a logged-in session.
 
 ## 3. Read endpoints
 
@@ -102,6 +102,19 @@ curl -s -X DELETE -H "Authorization: Bearer <token>" \
 
 A **read-only** token gets `403` on these write routes. Every change is committed to the project's
 git repo (author = the agent's label), so nothing is lost and the UI's history/restore still works.
+
+Optional tracking uses `POST /api/projects/:slug/nodes/:id/tracking` with an `operation`:
+`enable`, `disable`, `add`, `edit`, `remove`, `complete` or `reopen`.
+For `add`, provide `task: { id, title, kind: "task" | "milestone" }`; for `edit`, provide
+`taskId` and `patch` containing `title`, `done` and/or `kind`; for `remove`, provide `taskId`.
+Use a stable unique task ID when retrying an add. Individual operations update the latest
+checklist under the project lock instead of replacing another tab's entire list.
+
+`POST /api/projects/:slug/nodes/:id/continue` creates a child version from a completed idea.
+The body accepts an optional `title` and `carryTasks` boolean (default `false`). A repeated
+request returns the existing successor. The returned node has `continued_from` and `version`.
+Both routes require a session or a WRITE-scoped token and return an undo `action` when changed.
+Checklists also appear in project reads and document exports.
 
 ## Notes
 

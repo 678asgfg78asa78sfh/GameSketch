@@ -6,6 +6,8 @@ import { DEFAULT_CATEGORIES } from "../pillars.js";
 import TreeNode from "./TreeNode.jsx";
 import { searchNodes } from "../nodeLinks.js";
 import { flushAll } from "../useAutosave.js";
+import ProgressMeter from "./ProgressMeter.jsx";
+import { trackingProgress } from "../../../shared/tracking.js";
 
 function nest(nodes) {
   const byId = new Map(nodes.map((n) => [n.id, { ...n, children: [] }]));
@@ -110,7 +112,13 @@ export default function Tree({ project, selectedId, onSelect, onChanged, onError
     <><div className="search-controls"><input className="field" data-project-search type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("qol.search")} aria-label={t("qol.search")} title={t("qol.searchHint")} onKeyDown={(e) => { if (e.key === "Escape") { setQuery(""); setProgress(""); setStatus(""); } if (e.key === "Enter" && results[0]) onSelect(results[0].id); }} />
       <div className="toolbar"><select className="field" aria-label={t("qol.allProgress")} value={progress} onChange={(e) => setProgress(e.target.value)}><option value="">{t("qol.allProgress")}</option>{["new", "needs_work", "complete"].map((p) => <option key={p} value={p}>{t(`progress.${p}`)}</option>)}</select><select className="field" aria-label={t("qol.allStatus")} value={status} onChange={(e) => setStatus(e.target.value)}><option value="">{t("qol.allStatus")}</option>{["core", "side", "future"].map((s) => <option key={s} value={s}>{t(`status.${s}`)}</option>)}</select></div>
     </div>
-    {filtering ? <div>{!results.length && <p className="muted">{t("qol.noResults")}</p>}{results.map((n) => <button className={`btn search-result ${n.id === selectedId ? "btn-primary" : "btn-ghost"}`} key={n.id} onClick={() => onSelect(n.id)}>{n.title}<small>{cats.find((c) => c.slug === n.pillar)?.label} · {t(`progress.${n.progress || "new"}`)}</small><small>{(n.body || "").replace(/[#*_`]/g, "").slice(0, 150)}</small></button>)}</div> : <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => onDragEnd(e).catch(onError)}>
+    {filtering ? <div>{!results.length && <p className="muted">{t("qol.noResults")}</p>}{results.map((n) => {
+      const work = trackingProgress(n);
+      return <button className={`btn search-result ${n.id === selectedId ? "btn-primary" : "btn-ghost"}`} key={n.id} onClick={() => onSelect(n.id)}>{n.title}
+        <small>{cats.find((c) => c.slug === n.pillar)?.label} · {t(`progress.${work.status}`)}</small>
+        {work.enabled && <ProgressMeter compact percent={work.percent} label={t("tracker.nodeProgress", { title: n.title })} />}
+        <small>{(n.body || "").replace(/[#*_`]/g, "").slice(0, 150)}</small></button>;
+    })}</div> : <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => onDragEnd(e).catch(onError)}>
       {cats.map((cat) => (
         <CategorySection key={cat.slug} cat={cat} roots={roots} slug={project.slug}
           selectedId={selectedId} onSelect={onSelect} onChanged={onChanged} onAddRoot={addRoot} onError={onError} t={t} />

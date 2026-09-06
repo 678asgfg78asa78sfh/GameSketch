@@ -10,11 +10,15 @@ import { downloadUrl, errorText } from "../ui.js";
 import DocumentReader from "../components/DocumentReader.jsx";
 import WorkspacePanel from "../components/WorkspacePanel.jsx";
 import TemplateDialog from "../components/TemplateDialog.jsx";
+import { ProjectProgress } from "../components/ProgressMeter.jsx";
 
 export default function Project({ slug, me, onBack }) {
   const { t } = useT();
   const { setWork, reloadKey, layoutTick } = useWork();
   const [project, setProject] = useState(null);
+  const preferredKey = `gs_primary_view_${me.name}`;
+  const [preferredTab, setPreferredTab] = useState(() => { try { return localStorage.getItem(preferredKey) === "preview" ? "preview" : "edit"; } catch { return "edit"; } });
+  const [pendingPreference, setPendingPreference] = useState(null);
   const [view, setView] = useState("editor"), [error, setError] = useState(""), [notice, setNotice] = useState(null);
   const [templateOpen, setTemplateOpen] = useState(false), [busy, setBusy] = useState(false);
   // restore the previously open node so a refresh reopens it
@@ -38,6 +42,17 @@ export default function Project({ slug, me, onBack }) {
   async function changeView(next) {
     try { await flushAll(); await reload(); setView(next); setMaximized(false); }
     catch (e) { setError(errorText(e, t)); }
+  }
+  async function changePreferredView(checked) {
+    if (pendingPreference !== null) return;
+    setPendingPreference(checked);
+    try {
+      await flushAll();
+      const next = checked ? "preview" : "edit";
+      setPreferredTab(next); setView("editor");
+      try { localStorage.setItem(preferredKey, next); } catch { /* still works for this session */ }
+    } catch (e) { setError(errorText(e, t)); }
+    finally { setPendingPreference(null); }
   }
   async function back() { try { await flushAll(); onBack(); } catch (e) { setError(errorText(e, t)); } }
   async function backup() {
@@ -95,13 +110,15 @@ export default function Project({ slug, me, onBack }) {
       <header className="glass project-header toolbar" style={{ gap: 16, padding: "12px 16px" }}>
         <button className="btn btn-ghost" onClick={back}>{t("project.back")}</button>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 19, fontWeight: 700 }}>{project.title}</div>
-        <nav className="toolbar" style={{ marginLeft: "auto" }}>{["editor", "reader", "trash", "activity"].map((key) => <button key={key} className={`btn ${view === key ? "btn-primary" : "btn-ghost"}`} aria-pressed={view === key} onClick={() => changeView(key)}>{t(`qol.${key}`)}</button>)}<button className="btn" disabled={busy} onClick={backup} title={t("qol.backupHint")}>{t("qol.backup")}</button></nav>
+        <label className="primary-view" title={t("tracker.primaryHint")}><input type="checkbox" checked={pendingPreference ?? preferredTab === "preview"} disabled={pendingPreference !== null} onChange={(e) => changePreferredView(e.target.checked)} />{t("tracker.primaryView")}</label>
+        <nav className="toolbar" style={{ marginLeft: "auto" }}>{["editor", "reader", "trash", "activity"].map((key) => <button key={key} className={`btn ${view === key ? "btn-primary" : "btn-ghost"}`} aria-pressed={view === key} onClick={() => changeView(key)}>{t(key === "editor" ? "tracker.ideas" : `qol.${key}`)}</button>)}<button className="btn" disabled={busy} onClick={backup} title={t("qol.backupHint")}>{t("qol.backup")}</button></nav>
       </header>
       {error && <div role="alert" className="error">{error} <button className="btn btn-ghost" onClick={() => reload()}>{t("qol.retry")}</button><button className="btn btn-ghost" onClick={() => setError("")}>{t("qol.close")}</button></div>}
       {notice && <div className="toolbar notice" role="status"><span>{t(`qol.kinds.${notice.kind}`)}</span><button className="btn btn-ghost" disabled={busy} onClick={undo}>{t("qol.undo")}</button><button className="btn btn-ghost" style={{ marginLeft: "auto" }} aria-label={t("qol.close")} onClick={() => setNotice(null)}>✕</button></div>}
 
       <div className="project-grid" style={{ flex: 1, display: "grid", gridTemplateColumns: editorMaximized ? "minmax(0, 1fr)" : `${sideW}px 8px minmax(0, 1fr)`, gap: editorMaximized ? 0 : 8, minHeight: 0 }}>
         <aside className="glass" style={{ display: editorMaximized ? "none" : undefined, overflow: "auto", padding: 16 }}>
+          <ProjectProgress nodes={project.nodes} />
           <button className="btn" style={{ width: "100%", marginBottom: 12 }} onClick={async () => { try { await flushAll(); setTemplateOpen(true); } catch (e) { setError(errorText(e, t)); } }}>{t("qol.addTemplate")}</button>
           <Tree project={project} selectedId={selectedId} onSelect={navigate} onChanged={reload} onError={(e) => setError(errorText(e, t))} />
           <small className="muted">{t("qol.shortcuts")}</small>
@@ -112,7 +129,7 @@ export default function Project({ slug, me, onBack }) {
         <main className="glass" style={{ overflow: "auto" }}>
           {view === "reader" ? <DocumentReader project={project} onNavigate={navigate} /> : ["trash", "activity"].includes(view) ? <WorkspacePanel key={view + reloadKey} slug={slug} mode={view} onChanged={reload} onNavigate={navigate} /> : selected ? (
             <NodeEditor key={selected.id} slug={slug} node={selected} project={project} userName={me.name} onNavigate={navigate} onChanged={reload}
-              maximized={editorMaximized} onToggleMaximize={() => setMaximized((m) => !m)} />
+              preferredTab={preferredTab} maximized={editorMaximized} onToggleMaximize={() => setMaximized((m) => !m)} />
           ) : (
             <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--text-faint)", textAlign: "center", padding: 40 }}>
               <div>

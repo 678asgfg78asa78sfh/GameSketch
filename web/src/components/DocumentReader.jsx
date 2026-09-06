@@ -5,6 +5,7 @@ import { orderedNodes } from "../nodeLinks.js";
 import { downloadBlob, downloadUrl, errorText } from "../ui.js";
 import { canvasSvg, isImage, standaloneDocument } from "../documentExport.js";
 import MarkdownView from "./MarkdownView.jsx";
+import { TrackingSummary } from "./NodeTracker.jsx";
 
 function Drawing({ slug, node }) {
   const { t } = useT();
@@ -12,6 +13,11 @@ function Drawing({ slug, node }) {
   useEffect(() => { let active = true; setError(""); canvasSvg(slug, node.id).then((svg) => { if (active) setSvg(svg); }).catch((e) => { if (active) setError(errorText(e, t)); }); return () => { active = false; }; }, [slug, node.id, node.updated_at, retry, t]);
   if (error) return <div role="alert" className="error">{error} <button className="btn" onClick={() => setRetry((n) => n + 1)}>{t("qol.retry")}</button></div>;
   return svg === null ? <p className="muted">{t("editor.canvasLoading")}</p> : <figure dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
+export function NodeMedia({ slug, node }) {
+  return <><div className="attachment-grid">{(node.attachments || []).map((path) => <a className="attachment-card" key={path} href={`/api/projects/${slug}/${path}`} target="_blank" rel="noreferrer">{isImage(path) && <img loading="lazy" src={`/api/projects/${slug}/${path}`} alt={path.split("/").pop()} />}{path.split("/").pop()}</a>)}</div>
+    {node.canvas && <Drawing slug={slug} node={node} />}</>;
 }
 
 export default function DocumentReader({ project, onNavigate }) {
@@ -48,9 +54,8 @@ export default function DocumentReader({ project, onNavigate }) {
     {!nodes.length ? <p>{t("qol.noDocument")}</p> : <nav aria-label={t("qol.contents")}><h2>{t("qol.contents")}</h2><ul className="reader-toc">{nodes.map((n) => <li style={{ marginLeft: n.depth * 12 }} key={n.id}><a href={`#node-${n.id}`} onClick={(e) => { e.preventDefault(); scrollTo(n.id); }}>{n.title}</a></li>)}</ul></nav>}
     {nodes.map((n) => <section className="reader-node" id={`node-${n.id}`} key={n.id}>
       <div className="toolbar"><small className="muted">{project.categories.find((c) => c.slug === n.pillar)?.label} · {n.status} · {t(`progress.${n.progress || "new"}`)}</small><button className="btn btn-ghost no-print" style={{ marginLeft: "auto" }} onClick={() => onNavigate(n.id)}>{t("qol.openIdea")}</button></div>
-      <h3>{n.title}</h3><MarkdownView text={n.body} nodes={project.nodes} slug={project.slug} onNavigate={scrollTo} />
-      <div className="attachment-grid">{(n.attachments || []).map((path) => <a className="attachment-card" key={path} href={`/api/projects/${project.slug}/${path}`} target="_blank" rel="noreferrer">{isImage(path) && <img loading="lazy" src={`/api/projects/${project.slug}/${path}`} alt={path.split("/").pop()} />}{path.split("/").pop()}</a>)}</div>
-      {n.canvas && <Drawing slug={project.slug} node={n} />}
+      <h3>{n.title}</h3><TrackingSummary node={n} /><MarkdownView text={n.body} nodes={project.nodes} slug={project.slug} onNavigate={scrollTo} />
+      <NodeMedia slug={project.slug} node={n} />
     </section>)}
   </div>;
 }

@@ -1,4 +1,5 @@
 import { Marked, marked } from "marked";
+import { trackingProgress } from "../../shared/tracking.js";
 
 export const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const linkPattern = /^\[\[([A-Za-z0-9_-]+)(?:\|([^\]\n]+))?\]\]/;
@@ -46,7 +47,7 @@ export function orderedNodes(project) {
 export function searchNodes(nodes, query, { progress = "", status = "" } = {}) {
   const norm = (s) => String(s).normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase();
   const words = norm(query).trim().split(/\s+/).filter(Boolean);
-  return nodes.filter((n) => (!progress || (n.progress || "new") === progress) && (!status || n.status === status)
-    && words.every((word) => norm(`${n.title}\n${n.body || ""}`).includes(word)))
+  return nodes.filter((n) => (!progress || trackingProgress(n).status === progress) && (!status || n.status === status)
+    && words.every((word) => norm(`${n.title}\n${n.body || ""}\n${(n.tracking?.tasks || []).map((task) => task.title).join("\n")}`).includes(word)))
     .sort((a, b) => Number(words.every((w) => norm(b.title).includes(w))) - Number(words.every((w) => norm(a.title).includes(w))) || (a.order || 0) - (b.order || 0));
 }

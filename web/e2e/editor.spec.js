@@ -114,7 +114,7 @@ test("login, project creation, Markdown preview and attachment upload work throu
   await expect(page.locator("main input:not([type=file])")).toBeVisible();
   await page.locator("main textarea").fill("# Spielidee\n\n**Fett** und normal.");
   await page.getByRole("button", { name: "Vorschau", exact: true }).click();
-  await expect(page.locator("main h1")).toHaveText("Spielidee");
+  await expect(page.locator("main .md h1")).toHaveText("Spielidee");
   await expect(page.locator("main .md strong")).toHaveText("Fett");
   await page.getByRole("button", { name: "Text", exact: true }).click();
   const transfer = await page.evaluateHandle(() => {
